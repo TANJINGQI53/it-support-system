@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-Powered IT Support Ticketing System</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    body { background-color: #f0f4f8; color: #333; min-height: 100vh; }
+    .hidden { display: none !important; }
+
+    .header {
+      background-color: #1f4e79;
+      color: white;
+      text-align: center;
+      padding: 18px 20px;
+      font-size: 22px;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-wrapper { max-width: 440px; margin: 40px auto; text-align: center; }
+    .login-subtitle { font-size: 18px; margin-bottom: 20px; color: #1f4e79; font-weight: bold; }
+    .card {
+      background: white;
+      padding: 25px 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      text-align: left;
+    }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 14px; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .form-control:focus { outline: none; border-color: #1f4e79; }
+    .checkbox-row { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 16px; cursor: pointer; }
+
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-block { width: 100%; margin-bottom: 10px; }
+    .btn-success { background-color: #198754; }
+    .btn-primary { background-color: #1f4e79; }
+    .btn-blue    { background-color: #0d6efd; }
+    .btn-danger  { background-color: #dc3545; }
+
+    .demo-accounts { margin-top: 15px; font-size: 13px; color: #666; line-height: 1.6; }
+
+    .dashboard-container { max-width: 960px; margin: 20px auto; padding: 0 20px 40px; }
+    .welcome-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+    .welcome-left { display: flex; align-items: center; gap: 15px; }
+    .welcome-text { font-size: 18px; font-weight: bold; }
+    .section-title { font-size: 15px; font-weight: bold; margin: 15px 0 8px; color: #1f4e79; }
+    .sub-hint { font-size: 13px; color: #666; font-style: italic; margin-bottom: 12px; }
+
+    .table-wrapper { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); margin-bottom: 15px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid #e5e9f0; }
+    th { background-color: #e9eff5; color: #1f4e79; font-weight: bold; }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background-color: #f5f9ff; }
+    tbody tr.selected { background-color: #dbeafe; }
+
+    .badge { padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-block; }
+    .badge-high { background: #fee2e2; color: #b91c1c; }
+    .badge-medium { background: #fef3c7; color: #b45309; }
+    .badge-low { background: #e0f2fe; color: #0369a1; }
+    .badge-pending { background: #f3f4f6; color: #374151; }
+    .badge-resolved { background: #dcfce7; color: #15803d; }
+
+    .action-bar {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .ai-box {
+      background: white;
+      padding: 15px 18px;
+      border-radius: 8px;
+      border-left: 4px solid #1f4e79;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    .ai-box-title { font-weight: bold; color: #1f4e79; font-size: 14px; margin-bottom: 6px; }
+    .ai-box-content { font-size: 14px; white-space: pre-line; color: #444; line-height: 1.5; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .chat-modal { background: #f0f4f8; width: 460px; max-width: 92vw; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); }
+    .chat-header { background: #1f4e79; color: white; padding: 12px 16px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    .chat-close { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+    .chat-log { background: white; height: 320px; overflow-y: auto; padding: 14px; margin: 12px; border-radius: 6px; border: 1px solid #dce3ec; font-size: 14px; line-height: 1.5; }
+    .chat-msg { margin-bottom: 12px; }
+    .chat-msg strong { color: #1f4e79; }
+    .chat-msg.user strong { color: #198754; }
+    .chat-input-row { display: flex; gap: 8px; padding: 0 12px 14px; }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== LOGIN SCREEN ==================== -->
+  <div id="login-screen">
+    <div class="header">AI-Powered IT Support</div>
+    <div class="login-wrapper">
+      <div class="login-subtitle">Ticketing System</div>
+      <div class="card">
+        <div class="form-group">
+          <label for="username-input">Username</label>
+          <input type="text" id="username-input" class="form-control" placeholder="Enter username" />
+        </div>
+        <div class="form-group">
+          <label for="password-input">Password</label>
+          <input type="password" id="password-input" class="form-control" placeholder="Enter password" />
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="show-pwd-checkbox" onchange="togglePassword()" />
+          Show Password
+        </label>
+        <button class="btn btn-success btn-block" onclick="login()">LOGIN</button>
+        <button class="btn btn-primary btn-block" onclick="register()">REGISTER</button>
+      </div>
+      <div class="demo-accounts">
+        Admin: <strong>admin / admin123</strong><br />
+        User: <strong>user / user123</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DASHBOARD SCREEN ==================== -->
+  <div id="dashboard-screen" class="hidden">
+    <div class="header" id="dashboard-header">AI-Powered IT Support System</div>
+    <div class="dashboard-container">
+      <div class="welcome-bar">
+        <div class="welcome-left">
+          <span class="welcome-text" id="welcome-label">Welcome!</span>
+          <button class="btn btn-blue" onclick="openChatbot()">🤖 AI Chatbot</button>
+        </div>
+        <button class="btn btn-danger" onclick="logout()">Logout</button>
+      </div>
+
+      <!-- ADMIN PORTAL -->
+      <div id="admin-view" class="hidden">
+        <div class="sub-hint">Admin Control Panel: Review user requests, auto-categorisation, assign technicians & resolve tickets</div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Issue Subject</th>
+                <th>AI Category</th>
+                <th>Priority</th>
+                <th>Technician</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="admin-ticket-body"></tbody>
+          </table>
+        </div>
+
+        <div class="action-bar">
+          <label for="tech-select" style="font-weight:bold; font-size:14px;">Assign Tech:</label>
+          <select id="tech-select" class="form-control" style="width:160px;">
+            <option value="Tech_Alice">Tech_Alice</option>
+            <option value="Tech_Bob">Tech_Bob</option>
+            <option value="Tech_Charlie">Tech_Charlie</option>
+            <option value="Tech_David">Tech_David</option>
+          </select>
+          <button class="btn btn-blue" onclick="assignTechnician()">Assign Tech</button>
+          <button class="btn btn-success" onclick="resolveTicket()">Mark as Resolved</button>
+          <button class="btn btn-primary" onclick="loadAdminTickets()">Refresh List</button>
+        </div>
+      </div>
+
+      <!-- USER PORTAL -->
+      <div id="user-view" class="hidden">
+        <div class="section-title">Experiencing computer or network issues? Describe it in your own words, and AI will handle the analysis:</div>
+        <div class="card" style="margin-bottom: 18px;">
+          <div class="form-group">
+            <label for="ticket-subject">Short Summary:</label>
+            <input type="text" id="ticket-subject" class="form-control" placeholder="e.g., Wi-Fi keeps disconnecting" />
+          </div>
+          <div class="form-group">
+            <label for="ticket-desc">Detailed Description (What happened?):</label>
+            <textarea id="ticket-desc" class="form-control" rows="3" placeholder="Describe your problem casually..."></textarea>
+          </div>
+          <div style="text-align: right;">
+            <button class="btn btn-success" onclick="submitTicket()">Submit Ticket & Get AI Solution</button>
+          </div>
+        </div>
+
+        <div class="section-title">Your Submitted Tickets & AI Recommendations:</div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Issue Summary</th>
+                <th>AI Category</th>
+                <th>Priority</th>
+                <th>Technician</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="user-ticket-body"></tbody>
+          </table>
+        </div>
+
+        <div class="ai-box">
+          <div class="ai-box-title">💡 Click any row above to view the AI solution recommendation:</div>
+          <div class="ai-box-content" id="ai-rec-display">(Click a ticket row above to view details)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== AI CHATBOT MODAL ==================== -->
+  <div id="chatbot-modal" class="modal-overlay hidden">
+    <div class="chat-modal">
+      <div class="chat-header">
+        <span>🤖 AI Virtual IT Assistant</span>
+        <button class="chat-close" onclick="closeChatbot()">&times;</button>
+      </div>
+      <div class="chat-log" id="chat-log"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" class="form-control" placeholder="Type your issue here..." onkeydown="if(event.key==='Enter') sendChatMessage()" />
+        <button class="btn btn-success" onclick="sendChatMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let selectedAdminTicketId = null;
+
+    function togglePassword() {
+      const pwdInput = document.getElementById("password-input");
+      pwdInput.type = document.getElementById("show-pwd-checkbox").checked ? "text" : "password";
+    }
+
+    async function login() {
+      const username = document.getElementById("username-input").value.trim();
+      const password = document.getElementById("password-input").value;
+
+      if (!username || !password) {
+        alert("Please enter username and password!");
+        return;
+      }
+
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert(`Welcome back, ${data.username} (${data.role})!`);
+        currentUser = { username: data.username, role: data.role };
+        openDashboard();
+      } else {
+        alert(data.message);
+      }
+    }
+
+    async function register() {
+      const username = document.getElementById("username-input").value.trim();
+      const password = document.getElementById("password-input").value;
+
+      if (!username || !password) {
+        alert("Please enter username and password to register!");
+        return;
+      }
+
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+      alert(data.message);
+
+      if (data.success) {
+        document.getElementById("username-input").value = "";
+        document.getElementById("password-input").value = "";
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      selectedAdminTicketId = null;
+      document.getElementById("dashboard-screen").classList.add("hidden");
+      document.getElementById("login-screen").classList.remove("hidden");
+    }
+
+    function openDashboard() {
+      document.getElementById("login-screen").classList.add("hidden");
+      document.getElementById("dashboard-screen").classList.remove("hidden");
+
+      document.getElementById("dashboard-header").textContent = `AI-Powered IT Support System (${currentUser.role} Portal)`;
+      document.getElementById("welcome-label").textContent = `Welcome, ${currentUser.username}!`;
+
+      if (currentUser.role === "Admin") {
+        document.getElementById("admin-view").classList.remove("hidden");
+        document.getElementById("user-view").classList.add("hidden");
+        loadAdminTickets();
+      } else {
+        document.getElementById("user-view").classList.remove("hidden");
+        document.getElementById("admin-view").classList.add("hidden");
+        document.getElementById("ai-rec-display").textContent = "(Click a ticket row above to view details)";
+        loadUserTickets();
+      }
+    }
+
+    function priorityBadge(p) {
+      const cls = p === "High" ? "badge-high" : p === "Medium" ? "badge-medium" : "badge-low";
+      return `<span class="badge ${cls}">${p}</span>`;
+    }
+
+    function statusBadge(s) {
+      const cls = s === "Resolved" ? "badge-resolved" : "badge-pending";
+      return `<span class="badge ${cls}">${s}</span>`;
+    }
+
+    // USER ACTIONS
+    async function submitTicket() {
+      const subject = document.getElementById("ticket-subject").value.trim();
+      const description = document.getElementById("ticket-desc").value.trim();
+
+      if (!subject || !description) {
+        alert("Please fill in both the summary and description fields!");
+        return;
+      }
+
+      const res = await fetch("/api/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: currentUser.username, subject, description })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert(`Ticket submitted successfully!\n\n[AI Smart Analysis Result]\n• Category: ${data.category}\n• Priority: ${data.priority}\n\n${data.ai_recommendation}`);
+        document.getElementById("ticket-subject").value = "";
+        document.getElementById("ticket-desc").value = "";
+        document.getElementById("ai-rec-display").textContent = data.ai_recommendation;
+        loadUserTickets();
+      } else {
+        alert(data.message);
+      }
+    }
+
+    async function loadUserTickets() {
+      const res = await fetch(`/api/tickets?role=User&username=${encodeURIComponent(currentUser.username)}`);
+      const data = await res.json();
+      const tbody = document.getElementById("user-ticket-body");
+      tbody.innerHTML = "";
+
+      if (data.tickets.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#888;">No tickets submitted yet.</td></tr>`;
+        return;
+      }
+
+      data.tickets.forEach(ticket => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${ticket.id}</td>
+          <td>${ticket.subject}</td>
+          <td>${ticket.category}</td>
+          <td>${priorityBadge(ticket.priority)}</td>
+          <td>${ticket.technician}</td>
+          <td>${statusBadge(ticket.status)}</td>
+        `;
+        tr.onclick = () => {
+          document.querySelectorAll("#user-ticket-body tr").forEach(r => r.classList.remove("selected"));
+          tr.classList.add("selected");
+          document.getElementById("ai-rec-display").textContent = ticket.ai_recommendation;
+        };
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ADMIN ACTIONS
+    async function loadAdminTickets() {
+      const res = await fetch("/api/tickets?role=Admin");
+      const data = await res.json();
+      const tbody = document.getElementById("admin-ticket-body");
+      tbody.innerHTML = "";
+
+      if (data.tickets.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#888;">No tickets in system.</td></tr>`;
+        return;
+      }
+
+      data.tickets.forEach(ticket => {
+        const tr = document.createElement("tr");
+        if (ticket.id === selectedAdminTicketId) tr.classList.add("selected");
+        tr.innerHTML = `
+          <td>${ticket.id}</td>
+          <td>${ticket.username}</td>
+          <td>${ticket.subject}</td>
+          <td>${ticket.category}</td>
+          <td>${priorityBadge(ticket.priority)}</td>
+          <td>${ticket.technician}</td>
+          <td>${statusBadge(ticket.status)}</td>
+        `;
+        tr.onclick = () => {
+          selectedAdminTicketId = ticket.id;
+          document.querySelectorAll("#admin-ticket-body tr").forEach(r => r.classList.remove("selected"));
+          tr.classList.add("selected");
+        };
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function assignTechnician() {
+      if (!selectedAdminTicketId) {
+        alert("Please select a ticket from the table first!");
+        return;
+      }
+      const technician = document.getElementById("tech-select").value;
+      const res = await fetch(`/api/tickets/${selectedAdminTicketId}/assign`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ technician })
+      });
+      const data = await res.json();
+      alert(data.message);
+      loadAdminTickets();
+    }
+
+    async function resolveTicket() {
+      if (!selectedAdminTicketId) {
+        alert("Please select a ticket to mark as resolved!");
+        return;
+      }
+      const res = await fetch(`/api/tickets/${selectedAdminTicketId}/resolve`, {
+        method: "PUT"
+      });
+      const data = await res.json();
+      alert(data.message);
+      loadAdminTickets();
+    }
+
+    // AI CHATBOT
+    function openChatbot() {
+      const log = document.getElementById("chat-log");
+      if (!log.innerHTML.trim()) {
+        appendChat("AI Assistant", "Hello! Having computer or network trouble? Feel free to describe it in your own words (e.g., 'wifi not working', 'forgot password').", false);
+      }
+      document.getElementById("chatbot-modal").classList.remove("hidden");
+      document.getElementById("chat-input").focus();
+    }
+
+    function closeChatbot() {
+      document.getElementById("chatbot-modal").classList.add("hidden");
+    }
+
+    function appendChat(sender, message, isUser) {
+      const log = document.getElementById("chat-log");
+      const div = document.createElement("div");
+      div.className = isUser ? "chat-msg user" : "chat-msg";
+      div.innerHTML = `<strong>${sender}:</strong> ${message}`;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById("chat-input");
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      appendChat("You", msg, true);
+      input.value = "";
+
+      const lower = msg.toLowerCase();
+      let reply = "Got it. I recommend submitting a ticket directly on the main dashboard so our technicians can assist you further!";
+      if (lower.includes("net") || lower.includes("wifi") || lower.includes("internet") || lower.includes("slow")) {
+        reply = "This might be caused by weak Wi-Fi signal or a router freeze. Try restarting your router or reconnecting to the wireless network.";
+      } else if (lower.includes("password") || lower.includes("login")) {
+        reply = "If you forgot your password, please contact the system administrator (admin) to reset it.";
+      } else if (lower.includes("printer")) {
+        reply = "Please check your printer power cable, USB/network connection, and verify if it's out of paper.";
+      }
+
+      setTimeout(() => appendChat("AI Assistant", reply, false), 350);
+    }
+  </script>
+</body>
+</html>
