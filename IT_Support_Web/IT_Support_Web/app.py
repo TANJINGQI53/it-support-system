@@ -12,6 +12,9 @@ app.secret_key = os.environ.get("SECRET_KEY", "it-support-super-secret-key-2026"
 DATABASE_URL = os.environ.get("DATABASE_URL")
 DB_FILE = "it_support.db"
 
+MAX_ADMINS = 3
+MAX_USERS = 100
+
 def get_db():
     if DATABASE_URL:
         return psycopg2.connect(DATABASE_URL)
@@ -28,9 +31,11 @@ def init_db():
                 id SERIAL PRIMARY KEY,
                 username TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
+                plain_password TEXT DEFAULT '',
                 role TEXT DEFAULT 'user'
             )
         ''')
+        c.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS plain_password TEXT DEFAULT ''")
         c.execute('''
             CREATE TABLE IF NOT EXISTS tickets (
                 id SERIAL PRIMARY KEY,
@@ -50,9 +55,15 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
+                plain_password TEXT DEFAULT '',
                 role TEXT DEFAULT 'user'
             )
         ''')
+        c.execute("PRAGMA table_info(users)")
+        cols = [row[1] for row in c.fetchall()]
+        if "plain_password" not in cols:
+            c.execute("ALTER TABLE users ADD COLUMN plain_password TEXT DEFAULT ''")
+
         c.execute('''
             CREATE TABLE IF NOT EXISTS tickets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,15 +86,25 @@ def init_db():
         c.execute("SELECT id FROM users WHERE username = %s", (admin_user,))
         if not c.fetchone():
             c.execute(
-                "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, 'admin')",
-                (admin_user, admin_hash)
+                "INSERT INTO users (username, password_hash, plain_password, role) VALUES (%s, %s, %s, 'admin')",
+                (admin_user, admin_hash, admin_pass)
+            )
+        else:
+            c.execute(
+                "UPDATE users SET plain_password = %s WHERE username = %s AND (plain_password IS NULL OR plain_password = '')",
+                (admin_pass, admin_user)
             )
     else:
         c.execute("SELECT id FROM users WHERE username = ?", (admin_user,))
         if not c.fetchone():
             c.execute(
-                "INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'admin')",
-                (admin_user, admin_hash)
+                "INSERT INTO users (username, password_hash, plain_password, role) VALUES (?, ?, ?, 'admin')",
+                (admin_user, admin_hash, admin_pass)
+            )
+        else:
+            c.execute(
+                "UPDATE users SET plain_password = ? WHERE username = ? AND (plain_password IS NULL OR plain_password = '')",
+                (admin_pass, admin_user)
             )
 
     conn.commit()
@@ -110,23 +131,41 @@ def register():
     data = request.get_json()
     username = data.get('username', '').strip()
     password = data.get('password', '').strip()
+    role = data.get('role', 'user').strip().lower()
+
+    if role not in ('user', 'admin'):
+        role = 'user'
 
     if len(username) < 3 or len(password) < 4:
         return jsonify({'error': 'Username must be at least 3 chars and password at least 4 chars.'}), 400
 
-    pw_hash = generate_password_hash(password)
     conn = get_db()
     c = conn.cursor()
+
+    # 按所选角色分别检查数量上限（admin 最多 3 个，user 最多 100 个）
+    if DATABASE_URL:
+        c.execute("SELECT COUNT(*) FROM users WHERE role = %s", (role,))
+    else:
+        c.execute("SELECT COUNT(*) FROM users WHERE role = ?", (role,))
+    current_count = c.fetchone()[0]
+
+    limit = MAX_ADMINS if role == 'admin' else MAX_USERS
+    if current_count >= limit:
+        conn.close()
+        role_label = "Admin" if role == 'admin' else "User"
+        return jsonify({'error': f'{role_label} account limit reached ({limit}/{limit}).'}), 403
+
+    pw_hash = generate_password_hash(password)
     try:
         if DATABASE_URL:
             c.execute(
-                "INSERT INTO users (username, password_hash, role) VALUES (%s, %s, 'user')",
-                (username, pw_hash)
+                "INSERT INTO users (username, password_hash, plain_password, role) VALUES (%s, %s, %s, %s)",
+                (username, pw_hash, password, role)
             )
         else:
             c.execute(
-                "INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'user')",
-                (username, pw_hash)
+                "INSERT INTO users (username, password_hash, plain_password, role) VALUES (?, ?, ?, ?)",
+                (username, pw_hash, password, role)
             )
         conn.commit()
     except Exception:
@@ -134,7 +173,7 @@ def register():
         return jsonify({'error': 'Username already exists. Please choose another.'}), 409
 
     conn.close()
-    return jsonify({'message': 'Registration successful! Please log in.'}), 201
+    return jsonify({'message': f'{role.upper()} account registered successfully! Please log in.'}), 201
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -151,9 +190,16 @@ def login():
         c.execute("SELECT * FROM users WHERE username = ?", (username,))
 
     user = c.fetchone()
-    conn.close()
 
     if user and check_password_hash(user['password_hash'], password):
+        if not user.get('plain_password'):
+            c2 = conn.cursor()
+            if DATABASE_URL:
+                c2.execute("UPDATE users SET plain_password = %s WHERE id = %s", (password, user['id']))
+            else:
+                c2.execute("UPDATE users SET plain_password = ? WHERE id = ?", (password, user['id']))
+            conn.commit()
+        conn.close()
         session['username'] = user['username']
         session['role'] = user['role']
         return jsonify({
@@ -162,12 +208,63 @@ def login():
             'role': user['role']
         })
 
+    conn.close()
     return jsonify({'error': 'Invalid username or password.'}), 401
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
     session.clear()
     return jsonify({'message': 'Logged out'})
+
+@app.route('/api/admin/users', methods=['GET'])
+def get_all_users():
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Admin privileges required.'}), 403
+
+    conn = get_db()
+    if DATABASE_URL:
+        c = conn.cursor(cursor_factory=RealDictCursor)
+        c.execute("SELECT id, username, plain_password, role FROM users ORDER BY role ASC, id ASC")
+    else:
+        c = conn.cursor()
+        c.execute("SELECT id, username, plain_password, role FROM users ORDER BY role ASC, id ASC")
+
+    rows = c.fetchall()
+    conn.close()
+    return jsonify({
+        'max_admins': MAX_ADMINS,
+        'max_users': MAX_USERS,
+        'current_username': session.get('username'),
+        'users': [dict(row) for row in rows]
+    })
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Admin privileges required.'}), 403
+
+    conn = get_db()
+    c = conn.cursor()
+    if DATABASE_URL:
+        c.execute("SELECT username FROM users WHERE id = %s", (user_id,))
+    else:
+        c.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+    row = c.fetchone()
+
+    if not row:
+        conn.close()
+        return jsonify({'error': 'Account not found.'}), 404
+    if row[0] == session.get('username'):
+        conn.close()
+        return jsonify({'error': 'You cannot delete your own currently logged-in account.'}), 400
+
+    if DATABASE_URL:
+        c.execute("DELETE FROM users WHERE id = %s", (user_id,))
+    else:
+        c.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Account deleted successfully.'})
 
 @app.route('/api/tickets', methods=['GET'])
 def get_tickets():
@@ -330,7 +427,7 @@ def ai_chat():
             last_error = str(e)
             continue
 
-    return jsonify({'reply': f'{last_error} Please try again in a few seconds, or submit a ticket on the right.'}), 200
+    return jsonify({'reply': f'{last_error} Please try again in a few seconds.'}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
