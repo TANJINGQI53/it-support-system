@@ -38,6 +38,7 @@
         .auth-msg { font-size: 13px; margin-top: 12px; text-align: center; min-height: 18px; }
 
         .container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1300px; margin: 0 auto; }
+        .container.admin-mode { grid-template-columns: 1fr; }
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
         .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
         .card h2 { font-size: 18px; color: #0f172a; margin-bottom: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
@@ -71,7 +72,7 @@
 <div id="topHeader" class="header hidden">
     <div>
         <h1>🛠️ AI-Powered IT Support Ticketing System</h1>
-        <p>Ask our AI Assistant for instant troubleshooting, or submit a ticket for IT engineer support.</p>
+        <p id="headerSubtitle">Ask our AI Assistant for instant troubleshooting, or submit a ticket for IT engineer support.</p>
     </div>
     <div id="userBar" class="user-bar">
         <span>Signed in as: <strong id="currentUsername"></strong> (<span id="currentRole"></span>)</span>
@@ -135,7 +136,7 @@
 </div>
 
 <div id="mainApp" class="hidden">
-    <div class="container">
+    <div id="topGridContainer" class="container">
         <div class="card">
             <h2>🤖 AI IT Support Assistant</h2>
             <div class="chat-box" id="chatBox">
@@ -147,7 +148,7 @@
             </div>
         </div>
 
-        <div class="card">
+        <div id="submitTicketCard" class="card">
             <h2>📝 Submit Support Ticket</h2>
             <div class="form-group">
                 <label>Your Name *</label>
@@ -310,10 +311,20 @@
         document.getElementById("topHeader").classList.remove("hidden");
         document.getElementById("mainApp").classList.remove("hidden");
 
+        const submitCard = document.getElementById("submitTicketCard");
+        const topGrid = document.getElementById("topGridContainer");
+        const headerSubtitle = document.getElementById("headerSubtitle");
+
         if (role === "admin") {
+            submitCard.classList.add("hidden");
+            topGrid.classList.add("admin-mode");
+            headerSubtitle.textContent = "Admin Console: Manage all user support tickets and assist troubleshooting with AI.";
             document.getElementById("ticketsHeading").textContent = "📋 All Support Tickets (Admin View)";
             document.getElementById("actionColHeader").classList.remove("hidden");
         } else {
+            submitCard.classList.remove("hidden");
+            topGrid.classList.remove("admin-mode");
+            headerSubtitle.textContent = "Ask our AI Assistant for instant troubleshooting, or submit a ticket for IT engineer support.";
             document.getElementById("ticketsHeading").textContent = "📋 My Support Tickets (Private)";
             document.getElementById("actionColHeader").classList.add("hidden");
         }
