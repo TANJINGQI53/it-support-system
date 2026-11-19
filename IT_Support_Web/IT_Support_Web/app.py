@@ -246,8 +246,9 @@ def update_ticket(ticket_id):
     conn.close()
     return jsonify({'message': 'Status updated'})
 
-def get_available_flash_models(api_key, primary_model):
+def get_available_text_models(api_key, primary_model):
     models = [primary_model]
+    excluded_keywords = ("tts", "audio", "image", "embedding", "aqa", "vision")
     try:
         res = requests.get(
             "https://generativelanguage.googleapis.com/v1beta/models",
@@ -258,11 +259,16 @@ def get_available_flash_models(api_key, primary_model):
             for m in res.json().get("models", []):
                 methods = m.get("supportedGenerationMethods", [])
                 name = m.get("name", "").replace("models/", "")
-                if "generateContent" in methods and "flash" in name and name not in models:
+                if (
+                    "generateContent" in methods
+                    and "gemini" in name
+                    and not any(kw in name for kw in excluded_keywords)
+                    and name not in models
+                ):
                     models.append(name)
     except Exception:
         pass
-    return models[:4]
+    return models[:5]
 
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
@@ -281,7 +287,7 @@ def ai_chat():
         }), 500
 
     primary_model = os.environ.get("AI_MODEL", "gemini-3.8-flash")
-    models_to_try = get_available_flash_models(api_key, primary_model)
+    models_to_try = get_available_text_models(api_key, primary_model)
 
     headers = {
         "Content-Type": "application/json",
@@ -315,7 +321,7 @@ def ai_chat():
                     last_error = "The AI model is currently experiencing high demand. Please try again in a few seconds."
                     time.sleep(1.5)
                     continue
-                if res.status_code == 404:
+                if res.status_code in (400, 404):
                     break
                 return jsonify({'reply': f'AI API Error ({res.status_code}): {res.text}'}), 500
             except Exception as e:
