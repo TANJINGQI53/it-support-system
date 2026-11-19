@@ -1,5 +1,4 @@
 import os
-import time
 import sqlite3
 from datetime import datetime
 import requests
@@ -246,14 +245,14 @@ def update_ticket(ticket_id):
     conn.close()
     return jsonify({'message': 'Status updated'})
 
-def get_available_text_models(api_key, primary_model):
+def get_fast_fallback_models(api_key, primary_model):
     models = [primary_model]
-    excluded_keywords = ("tts", "audio", "image", "embedding", "aqa", "vision")
+    excluded = ("tts", "audio", "image", "embedding", "aqa", "vision", "pro")
     try:
         res = requests.get(
             "https://generativelanguage.googleapis.com/v1beta/models",
             headers={"x-goog-api-key": api_key},
-            timeout=10
+            timeout=5
         )
         if res.ok:
             for m in res.json().get("models", []):
@@ -261,14 +260,16 @@ def get_available_text_models(api_key, primary_model):
                 name = m.get("name", "").replace("models/", "")
                 if (
                     "generateContent" in methods
-                    and "gemini" in name
-                    and not any(kw in name for kw in excluded_keywords)
+                    and "flash" in name
+                    and not any(kw in name for kw in excluded)
                     and name not in models
                 ):
                     models.append(name)
+                    if len(models) >= 2:
+                        break
     except Exception:
         pass
-    return models[:5]
+    return models
 
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
@@ -287,7 +288,7 @@ def ai_chat():
         }), 500
 
     primary_model = os.environ.get("AI_MODEL", "gemini-3.8-flash")
-    models_to_try = get_available_text_models(api_key, primary_model)
+    models_to_try = get_fast_fallback_models(api_key, primary_model)
 
     headers = {
         "Content-Type": "application/json",
@@ -311,24 +312,25 @@ def ai_chat():
     last_error = "The AI service is temporarily busy. Please try again in a few seconds."
     for model_name in models_to_try:
         api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
-        for attempt in range(2):
-            try:
-                res = requests.post(api_url, headers=headers, json=payload, timeout=20)
-                if res.ok:
-                    reply = res.json()['candidates'][0]['content']['parts'][0]['text']
-                    return jsonify({'reply': reply})
-                if res.status_code in (429, 503):
-                    last_error = "The AI model is currently experiencing high demand. Please try again in a few seconds."
-                    time.sleep(1.5)
-                    continue
-                if res.status_code in (400, 404):
-                    break
-                return jsonify({'reply': f'AI API Error ({res.status_code}): {res.text}'}), 500
-            except Exception as e:
-                last_error = str(e)
-                break
+        try:
+            res = requests.post(api_url, headers=headers, json=payload, timeout=12)
+            if res.ok:
+                reply = res.json()['candidates'][0]['content']['parts'][0]['text']
+                return jsonify({'reply': reply})
+            if res.status_code in (429, 503):
+                last_error = f"Model ({model_name}) is currently experiencing high demand."
+                continue
+            if res.status_code in (400, 404):
+                continue
+            return jsonify({'reply': f'AI API Error ({res.status_code}): {res.text}'}), 500
+        except requests.exceptions.Timeout:
+            last_error = f"Model ({model_name}) timed out."
+            continue
+        except Exception as e:
+            last_error = str(e)
+            continue
 
-    return jsonify({'reply': f'{last_error} You can also submit a support ticket on the right.'}), 503
+    return jsonify({'reply': f'{last_error} Please try again in a few seconds, or submit a ticket on the right.'}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
