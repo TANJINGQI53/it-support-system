@@ -262,10 +262,12 @@ def ai_chat():
         }), 500
 
     model_name = os.environ.get("AI_MODEL", "gemini-2.5-flash")
-    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+    # 适配 AQ. 开头的 Google Cloud Express / Gemini API Key
+    api_url = f"https://aiplatform.googleapis.com/v1/publishers/google/models/{model_name}:generateContent"
 
     headers = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "x-goog-api-key": api_key
     }
     payload = {
         "systemInstruction": {
