@@ -261,9 +261,9 @@ def ai_chat():
             'reply': '⚠️ AI_API_KEY is not configured on the server yet. Please add it in Render Environment Variables, or submit a ticket directly.'
         }), 500
 
-    model_name = os.environ.get("AI_MODEL", "gemini-2.5-flash")
-    # 适配 AQ. 开头的 Google Cloud Express / Gemini API Key
-    api_url = f"https://aiplatform.googleapis.com/v1/publishers/google/models/{model_name}:generateContent"
+   model_name = os.environ.get("AI_MODEL", "gemini-2.5-flash")
+    # Google AI Studio 生成的 AQ. 密钥专用：原生接口 + x-goog-api-key 请求头
+    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
 
     headers = {
         "Content-Type": "application/json",
