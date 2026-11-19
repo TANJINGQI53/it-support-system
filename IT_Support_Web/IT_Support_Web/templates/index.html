@@ -6,19 +6,50 @@
     <title>AI-Powered IT Support Ticketing System</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f0f4f8; color: #1e293b; padding: 20px; }
-        .header { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+        body { background-color: #f0f4f8; color: #1e293b; padding: 20px; min-height: 100vh; }
+
+        /* 登录后顶部栏 */
+        .header { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding: 24px; border-radius: 12px; margin: 0 auto 24px; max-width: 1300px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .header h1 { font-size: 24px; margin-bottom: 6px; }
         .header p { font-size: 14px; opacity: 0.9; }
+        .user-bar { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.15); padding: 8px 14px; border-radius: 8px; font-size: 14px; }
+        .btn-logout { background: #ef4444; padding: 6px 12px; font-size: 13px; }
+        .btn-logout:hover { background: #dc2626; }
+
+        /* 左右分栏现代登录卡片 */
+        .split-auth-container { max-width: 900px; margin: 45px auto; background: white; border-radius: 18px; overflow: hidden; display: grid; grid-template-columns: 1.05fr 1fr; box-shadow: 0 12px 35px rgba(15, 23, 42, 0.1); }
+        @media (max-width: 768px) { .split-auth-container { grid-template-columns: 1fr; margin: 20px auto; } }
+
+        .auth-banner { background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%); color: white; padding: 44px 36px; display: flex; flex-direction: column; justify-content: space-between; }
+        .brand-badge { display: inline-block; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 20px; width: fit-content; }
+        .auth-banner h2 { font-size: 26px; line-height: 1.3; margin-bottom: 14px; }
+        .auth-banner p { font-size: 14px; opacity: 0.85; line-height: 1.6; margin-bottom: 28px; }
+        .feature-list { list-style: none; display: flex; flex-direction: column; gap: 14px; font-size: 13.5px; }
+        .feature-list li { display: flex; align-items: center; gap: 10px; opacity: 0.95; }
+        .feature-icon { background: rgba(255,255,255,0.2); width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+        .banner-footer { font-size: 12px; opacity: 0.65; margin-top: 32px; }
+
+        .auth-panel { padding: 44px 38px; display: flex; flex-direction: column; justify-content: center; }
+        .auth-tabs { display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; margin-bottom: 24px; }
+        .auth-tab { flex: 1; text-align: center; padding: 9px; font-size: 14px; font-weight: 600; cursor: pointer; color: #64748b; border-radius: 8px; transition: all 0.2s; }
+        .auth-tab.active { background: white; color: #1e3a8a; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+
+        .password-wrapper { position: relative; }
+        .toggle-pw { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 12px; font-weight: 600; color: #64748b; user-select: none; }
+        .toggle-pw:hover { color: #1e293b; }
+        .auth-msg { font-size: 13px; margin-top: 12px; text-align: center; min-height: 18px; }
+
+        /* 主界面样式 */
         .container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1300px; margin: 0 auto; }
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
         .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
         .card h2 { font-size: 18px; color: #0f172a; margin-bottom: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
-        .form-group { margin-bottom: 14px; }
-        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #475569; }
-        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #475569; }
+        input, select, textarea { width: 100%; padding: 11px 13px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb; }
         textarea { resize: vertical; height: 90px; }
-        button { background: #2563eb; color: white; border: none; padding: 11px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        button { background: #2563eb; color: white; border: none; padding: 12px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         button:hover { background: #1d4ed8; }
         .chat-box { height: 340px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #f8fafc; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
         .msg { max-width: 82%; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
@@ -35,101 +66,280 @@
         .badge.Resolved { background: #dcfce7; color: #16a34a; }
         .btn-resolve { background: #10b981; padding: 6px 12px; font-size: 12px; }
         .btn-resolve:hover { background: #059669; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div class="header" style="max-width: 1300px; margin: 0 auto 24px;">
-    <h1>🛠️ AI-Powered IT Support Ticketing System</h1>
-    <p>Ask our AI Assistant for instant troubleshooting, or submit a ticket for live IT engineer support.</p>
-</div>
-
-<div class="container">
-    <!-- 左侧：AI 聊天助手 -->
-    <div class="card">
-        <h2>🤖 AI IT Support Assistant</h2>
-        <div class="chat-box" id="chatBox">
-            <div class="msg bot">Hello! I am your AI IT Assistant. Describe your computer, network, printer, or software problem, and I will help you troubleshoot it step by step.</div>
-        </div>
-        <div class="chat-input-row">
-            <input type="text" id="chatInput" placeholder="e.g., My Wi-Fi keeps disconnecting..." onkeypress="if(event.key==='Enter') sendChatMessage()">
-            <button onclick="sendChatMessage()">Send</button>
-        </div>
+<!-- 登录后才显示的顶部导航栏 -->
+<div id="topHeader" class="header hidden">
+    <div>
+        <h1>🛠️ AI-Powered IT Support Ticketing System</h1>
+        <p>Ask our AI Assistant for instant troubleshooting, or submit a ticket for IT engineer support.</p>
     </div>
-
-    <!-- 右侧：提交工单 -->
-    <div class="card">
-        <h2>📝 Submit Support Ticket</h2>
-        <div class="form-group">
-            <label>Your Name *</label>
-            <input type="text" id="userName" placeholder="Enter your full name">
-        </div>
-        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div>
-                <label>Department</label>
-                <select id="userDept">
-                    <option value="IT">IT</option>
-                    <option value="HR">HR</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Operations">Operations</option>
-                    <option value="Student / Staff">Student / Staff</option>
-                </select>
-            </div>
-            <div>
-                <label>Category</label>
-                <select id="ticketCat">
-                    <option value="Network / Wi-Fi">Network / Wi-Fi</option>
-                    <option value="Hardware">Hardware</option>
-                    <option value="Software">Software</option>
-                    <option value="Account / Password">Account / Password</option>
-                    <option value="Printer">Printer</option>
-                </select>
-            </div>
-        </div>
-        <div class="form-group">
-            <label>Priority</label>
-            <select id="ticketPriority">
-                <option value="Low">Low</option>
-                <option value="Medium" selected>Medium</option>
-                <option value="High">High</option>
-                <option value="Urgent">Urgent</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Issue Description *</label>
-            <textarea id="ticketDesc" placeholder="Please describe the issue in detail..."></textarea>
-        </div>
-        <button onclick="submitTicket()" style="width: 100%;">Submit Ticket</button>
+    <div id="userBar" class="user-bar">
+        <span>Signed in as: <strong id="currentUsername"></strong> (<span id="currentRole"></span>)</span>
+        <button class="btn-logout" onclick="logout()">Logout</button>
     </div>
 </div>
 
-<!-- 底部：实时同步工单列表 -->
-<div class="tickets-section card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h2 style="margin-bottom: 0; border: none;">📋 Live Support Tickets (Auto-Synced)</h2>
-        <button onclick="loadTickets()" style="background: #64748b; padding: 7px 14px; font-size: 13px;">🔄 Refresh</button>
+<!-- 左右分栏现代登录 / 注册界面 -->
+<div id="authSection" class="split-auth-container">
+    <div class="auth-banner">
+        <div>
+            <span class="brand-badge">IT SERVICE DESK PORTAL</span>
+            <h2>Smart IT Support, Powered by AI.</h2>
+            <p>Diagnose technical issues instantly with our AI Assistant or raise a private support ticket directly to our engineering team.</p>
+            <ul class="feature-list">
+                <li><span class="feature-icon">✓</span> Instant AI-guided troubleshooting</li>
+                <li><span class="feature-icon">✓</span> Real-time ticket status tracking</li>
+                <li><span class="feature-icon">✓</span> Strict private user data isolation</li>
+            </ul>
+        </div>
+        <div class="banner-footer">Authorized Personnel & Registered Users Only</div>
     </div>
-    <div style="overflow-x: auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>User</th>
-                    <th>Dept</th>
-                    <th>Category</th>
-                    <th>Priority</th>
-                    <th>Description</th>
-                    <th>Time</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="ticketTableBody"></tbody>
-        </table>
+
+    <div class="auth-panel">
+        <div class="auth-tabs">
+            <div id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
+            <div id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Create Account</div>
+        </div>
+
+        <div id="loginForm">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="loginUser" placeholder="Enter your username" onkeypress="if(event.key==='Enter') handleLogin()">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="loginPass" placeholder="Enter your password" onkeypress="if(event.key==='Enter') handleLogin()">
+                    <span class="toggle-pw" onclick="togglePassword('loginPass', this)">Show</span>
+                </div>
+            </div>
+            <button onclick="handleLogin()" style="width: 100%; margin-top: 6px;">Sign In to Portal</button>
+        </div>
+
+        <div id="registerForm" class="hidden">
+            <div class="form-group">
+                <label>Choose Username</label>
+                <input type="text" id="regUser" placeholder="Minimum 3 characters">
+            </div>
+            <div class="form-group">
+                <label>Choose Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="regPass" placeholder="Minimum 4 characters" onkeypress="if(event.key==='Enter') handleRegister()">
+                    <span class="toggle-pw" onclick="togglePassword('regPass', this)">Show</span>
+                </div>
+            </div>
+            <button onclick="handleRegister()" style="width: 100%; margin-top: 6px; background: #10b981;">Register Account</button>
+        </div>
+
+        <div id="authMsg" class="auth-msg"></div>
+    </div>
+</div>
+
+<!-- 主工作台（登录后显示） -->
+<div id="mainApp" class="hidden">
+    <div class="container">
+        <!-- 左侧：AI 聊天助手 -->
+        <div class="card">
+            <h2>🤖 AI IT Support Assistant</h2>
+            <div class="chat-box" id="chatBox">
+                <div class="msg bot">Hello! I am your AI IT Assistant. Describe your computer, network, printer, or software problem, and I will help you troubleshoot it step by step.</div>
+            </div>
+            <div class="chat-input-row">
+                <input type="text" id="chatInput" placeholder="e.g., My Wi-Fi keeps disconnecting..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()">Send</button>
+            </div>
+        </div>
+
+        <!-- 右侧：提交工单 -->
+        <div class="card">
+            <h2>📝 Submit Support Ticket</h2>
+            <div class="form-group">
+                <label>Your Name *</label>
+                <input type="text" id="userName" placeholder="Enter your full name">
+            </div>
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <label>Department</label>
+                    <select id="userDept">
+                        <option value="IT">IT</option>
+                        <option value="HR">HR</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Student / Staff">Student / Staff</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Category</label>
+                    <select id="ticketCat">
+                        <option value="Network / Wi-Fi">Network / Wi-Fi</option>
+                        <option value="Hardware">Hardware</option>
+                        <option value="Software">Software</option>
+                        <option value="Account / Password">Account / Password</option>
+                        <option value="Printer">Printer</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Priority</label>
+                <select id="ticketPriority">
+                    <option value="Low">Low</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Issue Description *</label>
+                <textarea id="ticketDesc" placeholder="Please describe the issue in detail..."></textarea>
+            </div>
+            <button onclick="submitTicket()" style="width: 100%;">Submit Ticket</button>
+        </div>
+    </div>
+
+    <!-- 底部：隐私隔离工单列表（普通用户仅见自己，管理员见全部） -->
+    <div class="tickets-section card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h2 id="ticketsHeading" style="margin-bottom: 0; border: none;">📋 My Support Tickets</h2>
+            <button onclick="loadTickets()" style="background: #64748b; padding: 7px 14px; font-size: 13px;">🔄 Refresh</button>
+        </div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Dept</th>
+                        <th>Category</th>
+                        <th>Priority</th>
+                        <th>Description</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th id="actionColHeader" class="hidden">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="ticketTableBody"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
+    let currentUserRole = "user";
+    let syncTimer = null;
+
+    function togglePassword(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+            btn.textContent = "Hide";
+        } else {
+            input.type = "password";
+            btn.textContent = "Show";
+        }
+    }
+
+    function switchAuthTab(tab) {
+        document.getElementById("authMsg").textContent = "";
+        if (tab === "login") {
+            document.getElementById("tabLogin").classList.add("active");
+            document.getElementById("tabRegister").classList.remove("active");
+            document.getElementById("loginForm").classList.remove("hidden");
+            document.getElementById("registerForm").classList.add("hidden");
+        } else {
+            document.getElementById("tabRegister").classList.add("active");
+            document.getElementById("tabLogin").classList.remove("active");
+            document.getElementById("registerForm").classList.remove("hidden");
+            document.getElementById("loginForm").classList.add("hidden");
+        }
+    }
+
+    async function handleRegister() {
+        const username = document.getElementById("regUser").value.trim();
+        const password = document.getElementById("regPass").value.trim();
+        const msgEl = document.getElementById("authMsg");
+
+        const res = await fetch("/api/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            msgEl.style.color = "#16a34a";
+            msgEl.textContent = data.message;
+            document.getElementById("regUser").value = "";
+            document.getElementById("regPass").value = "";
+            setTimeout(() => switchAuthTab("login"), 1000);
+        } else {
+            msgEl.style.color = "#dc2626";
+            msgEl.textContent = data.error;
+        }
+    }
+
+    async function handleLogin() {
+        const username = document.getElementById("loginUser").value.trim();
+        const password = document.getElementById("loginPass").value.trim();
+        const msgEl = document.getElementById("authMsg");
+
+        const res = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            enterApp(data.username, data.role);
+        } else {
+            msgEl.style.color = "#dc2626";
+            msgEl.textContent = data.error;
+        }
+    }
+
+    async function logout() {
+        await fetch("/api/logout", { method: "POST" });
+        if (syncTimer) clearInterval(syncTimer);
+        document.getElementById("mainApp").classList.add("hidden");
+        document.getElementById("topHeader").classList.add("hidden");
+        document.getElementById("authSection").classList.remove("hidden");
+        document.getElementById("loginPass").value = "";
+        document.getElementById("authMsg").textContent = "";
+    }
+
+    function enterApp(username, role) {
+        currentUserRole = role;
+        document.getElementById("currentUsername").textContent = username;
+        document.getElementById("currentRole").textContent = role.toUpperCase();
+        document.getElementById("authSection").classList.add("hidden");
+        document.getElementById("topHeader").classList.remove("hidden");
+        document.getElementById("mainApp").classList.remove("hidden");
+
+        if (role === "admin") {
+            document.getElementById("ticketsHeading").textContent = "📋 All Support Tickets (Admin View)";
+            document.getElementById("actionColHeader").classList.remove("hidden");
+        } else {
+            document.getElementById("ticketsHeading").textContent = "📋 My Support Tickets (Private)";
+            document.getElementById("actionColHeader").classList.add("hidden");
+        }
+
+        loadTickets();
+        if (syncTimer) clearInterval(syncTimer);
+        syncTimer = setInterval(loadTickets, 10000);
+    }
+
+    async function initSession() {
+        const res = await fetch("/api/session");
+        const data = await res.json();
+        if (data.logged_in) {
+            enterApp(data.username, data.role);
+        }
+    }
+
     function appendChat(text, isUser) {
         const chatBox = document.getElementById("chatBox");
         const div = document.createElement("div");
@@ -200,12 +410,19 @@
 
     async function loadTickets() {
         const response = await fetch("/api/tickets");
+        if (!response.ok) return;
         const tickets = await response.json();
         const tbody = document.getElementById("ticketTableBody");
         tbody.innerHTML = "";
 
         tickets.forEach(t => {
             const tr = document.createElement("tr");
+            const actionCell = currentUserRole === "admin"
+                ? `<td>${t.status === 'Open'
+                    ? `<button class="btn-resolve" onclick="resolveTicket(${t.id})">Mark Resolved</button>`
+                    : `<span style="color: #94a3b8; font-size: 12px;">Done</span>`}</td>`
+                : "";
+
             tr.innerHTML = `
                 <td>#${t.id}</td>
                 <td><strong>${t.name}</strong></td>
@@ -215,18 +432,13 @@
                 <td>${t.description}</td>
                 <td style="font-size: 12px; color: #64748b;">${t.created_at}</td>
                 <td><span class="badge ${t.status}">${t.status}</span></td>
-                <td>
-                    ${t.status === 'Open' 
-                        ? `<button class="btn-resolve" onclick="resolveTicket(${t.id})">Mark Resolved</button>` 
-                        : `<span style="color: #94a3b8; font-size: 12px;">Done</span>`}
-                </td>
+                ${actionCell}
             `;
             tbody.appendChild(tr);
         });
     }
 
-    loadTickets();
-    setInterval(loadTickets, 10000); // 每10秒自动同步一次多人数据
+    initSession();
 </script>
 
 </body>
