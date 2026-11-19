@@ -1,4 +1,5 @@
 import os
+import time
 import sqlite3
 from datetime import datetime
 import requests
@@ -245,6 +246,24 @@ def update_ticket(ticket_id):
     conn.close()
     return jsonify({'message': 'Status updated'})
 
+def get_available_flash_models(api_key, primary_model):
+    models = [primary_model]
+    try:
+        res = requests.get(
+            "https://generativelanguage.googleapis.com/v1beta/models",
+            headers={"x-goog-api-key": api_key},
+            timeout=10
+        )
+        if res.ok:
+            for m in res.json().get("models", []):
+                methods = m.get("supportedGenerationMethods", [])
+                name = m.get("name", "").replace("models/", "")
+                if "generateContent" in methods and "flash" in name and name not in models:
+                    models.append(name)
+    except Exception:
+        pass
+    return models[:4]
+
 @app.route('/api/chat', methods=['POST'])
 def ai_chat():
     if 'username' not in session:
@@ -262,9 +281,7 @@ def ai_chat():
         }), 500
 
     primary_model = os.environ.get("AI_MODEL", "gemini-3.8-flash")
-    models_to_try = [primary_model]
-    if primary_model != "gemini-3.8-flash-lite":
-        models_to_try.append("gemini-3.8-flash-lite")
+    models_to_try = get_available_flash_models(api_key, primary_model)
 
     headers = {
         "Content-Type": "application/json",
@@ -285,20 +302,25 @@ def ai_chat():
         }
     }
 
-    last_error = ""
+    last_error = "The AI service is temporarily busy. Please try again in a few seconds."
     for model_name in models_to_try:
         api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
-        try:
-            res = requests.post(api_url, headers=headers, json=payload, timeout=20)
-            if res.ok:
-                reply = res.json()['candidates'][0]['content']['parts'][0]['text']
-                return jsonify({'reply': reply})
-            if res.status_code in (429, 503):
-                last_error = "The AI model is currently busy. Please try again in a few seconds."
-                continue
-            return jsonify({'reply': f'AI API Error ({res.status_code}): {res.text}'}), 500
-        except Exception as e:
-            last_error = str(e)
+        for attempt in range(2):
+            try:
+                res = requests.post(api_url, headers=headers, json=payload, timeout=20)
+                if res.ok:
+                    reply = res.json()['candidates'][0]['content']['parts'][0]['text']
+                    return jsonify({'reply': reply})
+                if res.status_code in (429, 503):
+                    last_error = "The AI model is currently experiencing high demand. Please try again in a few seconds."
+                    time.sleep(1.5)
+                    continue
+                if res.status_code == 404:
+                    break
+                return jsonify({'reply': f'AI API Error ({res.status_code}): {res.text}'}), 500
+            except Exception as e:
+                last_error = str(e)
+                break
 
     return jsonify({'reply': f'{last_error} You can also submit a support ticket on the right.'}), 503
 
