@@ -261,9 +261,10 @@ def ai_chat():
             'reply': '⚠️ AI_API_KEY is not configured on the server yet. Please add it in Render Environment Variables, or submit a ticket directly.'
         }), 500
 
-    model_name = os.environ.get("AI_MODEL", "gemini-2.5-flash")
-    # Google AI Studio 生成的 AQ. 密钥专用：原生接口 + x-goog-api-key 请求头
-    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
+    primary_model = os.environ.get("AI_MODEL", "gemini-3.8-flash")
+    models_to_try = [primary_model]
+    if primary_model != "gemini-3.8-flash-lite":
+        models_to_try.append("gemini-3.8-flash-lite")
 
     headers = {
         "Content-Type": "application/json",
@@ -284,14 +285,22 @@ def ai_chat():
         }
     }
 
-    try:
-        res = requests.post(api_url, headers=headers, json=payload, timeout=20)
-        if not res.ok:
+    last_error = ""
+    for model_name in models_to_try:
+        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
+        try:
+            res = requests.post(api_url, headers=headers, json=payload, timeout=20)
+            if res.ok:
+                reply = res.json()['candidates'][0]['content']['parts'][0]['text']
+                return jsonify({'reply': reply})
+            if res.status_code in (429, 503):
+                last_error = "The AI model is currently busy. Please try again in a few seconds."
+                continue
             return jsonify({'reply': f'AI API Error ({res.status_code}): {res.text}'}), 500
-        reply = res.json()['candidates'][0]['content']['parts'][0]['text']
-        return jsonify({'reply': reply})
-    except Exception as e:
-        return jsonify({'reply': f'AI service error: {str(e)}. Please submit a ticket instead.'}), 500
+        except Exception as e:
+            last_error = str(e)
+
+    return jsonify({'reply': f'{last_error} You can also submit a support ticket on the right.'}), 503
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
