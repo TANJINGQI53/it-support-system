@@ -37,9 +37,19 @@
         .toggle-pw:hover { color: #1e293b; }
         .auth-msg { font-size: 13px; margin-top: 12px; text-align: center; min-height: 18px; }
 
+        /* 管理员左侧边栏布局 */
+        .admin-shell { display: grid; grid-template-columns: 245px 1fr; gap: 24px; max-width: 1300px; margin: 0 auto; align-items: start; }
+        @media (max-width: 900px) { .admin-shell { grid-template-columns: 1fr; } }
+        .admin-sidebar { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #94a3b8; padding: 4px 12px 8px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: transparent; color: #475569; padding: 12px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .nav-item:hover { background: #f1f5f9; color: #1e293b; }
+        .nav-item.active { background: #eff6ff; color: #2563eb; box-shadow: inset 3px 0 0 #2563eb; }
+
+        /* 普通用户双栏布局 */
         .container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1300px; margin: 0 auto; }
-        .container.admin-mode { grid-template-columns: 1fr; }
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+
         .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
         .card h2 { font-size: 18px; color: #0f172a; margin-bottom: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
         .form-group { margin-bottom: 16px; }
@@ -49,7 +59,7 @@
         textarea { resize: vertical; height: 90px; }
         button { background: #2563eb; color: white; border: none; padding: 12px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         button:hover { background: #1d4ed8; }
-        .chat-box { height: 340px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #f8fafc; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .chat-box { height: 380px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #f8fafc; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
         .msg { max-width: 82%; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
         .msg.user { background: #2563eb; color: white; align-self: flex-end; }
         .msg.bot { background: #e2e8f0; color: #1e293b; align-self: flex-start; }
@@ -62,8 +72,14 @@
         .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .badge.Open { background: #fef3c7; color: #d97706; }
         .badge.Resolved { background: #dcfce7; color: #16a34a; }
+        .badge.role-admin { background: #dbeafe; color: #1d4ed8; }
+        .badge.role-user { background: #f1f5f9; color: #475569; }
         .btn-resolve { background: #10b981; padding: 6px 12px; font-size: 12px; }
         .btn-resolve:hover { background: #059669; }
+        .btn-danger { background: #ef4444; padding: 6px 12px; font-size: 12px; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-secondary { background: #64748b; padding: 5px 10px; font-size: 12px; }
+        .btn-secondary:hover { background: #475569; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -80,6 +96,7 @@
     </div>
 </div>
 
+<!-- 登录与注册页面 -->
 <div id="authSection" class="split-auth-container">
     <div class="auth-banner">
         <div>
@@ -89,7 +106,7 @@
             <ul class="feature-list">
                 <li><span class="feature-icon">✓</span> Instant AI-guided troubleshooting</li>
                 <li><span class="feature-icon">✓</span> Real-time ticket status tracking</li>
-                <li><span class="feature-icon">✓</span> Strict private user data isolation</li>
+                <li><span class="feature-icon">✓</span> Role-based access (Up to 3 Admins & 100 Users)</li>
             </ul>
         </div>
         <div class="banner-footer">Authorized Personnel & Registered Users Only</div>
@@ -118,6 +135,13 @@
 
         <div id="registerForm" class="hidden">
             <div class="form-group">
+                <label>Account Role</label>
+                <select id="regRole">
+                    <option value="user" selected>User (Max 100 Accounts)</option>
+                    <option value="admin">Admin (Max 3 Accounts)</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label>Choose Username</label>
                 <input type="text" id="regUser" placeholder="Minimum 3 characters">
             </div>
@@ -135,20 +159,96 @@
     </div>
 </div>
 
-<div id="mainApp" class="hidden">
-    <div id="topGridContainer" class="container">
-        <div class="card">
-            <h2>🤖 AI IT Support Assistant</h2>
-            <div class="chat-box" id="chatBox">
-                <div class="msg bot">Hello! I am your AI IT Assistant. Describe your computer, network, printer, or software problem, and I will help you troubleshoot it step by step.</div>
+<!-- ==================== 管理员专属左侧边栏工作台 ==================== -->
+<div id="adminApp" class="admin-shell hidden">
+    <aside class="admin-sidebar">
+        <div class="sidebar-title">Admin Navigation</div>
+        <button id="navTickets" class="nav-item active" onclick="switchAdminTab('tickets')">📋 Support Tickets</button>
+        <button id="navChat" class="nav-item" onclick="switchAdminTab('chat')">🤖 AI IT Assistant</button>
+        <button id="navAccounts" class="nav-item" onclick="switchAdminTab('accounts')">👥 Accounts & Passwords</button>
+    </aside>
+
+    <main>
+        <!-- 页面 1：Support Tickets -->
+        <div id="adminTicketsView" class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="margin-bottom: 0; border: none;">📋 All Support Tickets (Admin View)</h2>
+                <button onclick="loadTickets()" style="background: #64748b; padding: 7px 14px; font-size: 13px;">🔄 Refresh</button>
             </div>
-            <div class="chat-input-row">
-                <input type="text" id="chatInput" placeholder="e.g., My Wi-Fi keeps disconnecting..." onkeypress="if(event.key==='Enter') sendChatMessage()">
-                <button onclick="sendChatMessage()">Send</button>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Dept</th>
+                            <th>Category</th>
+                            <th>Priority</th>
+                            <th>Description</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTicketTableBody"></tbody>
+                </table>
             </div>
         </div>
 
-        <div id="submitTicketCard" class="card">
+        <!-- 页面 2：AI 聊天 -->
+        <div id="adminChatView" class="card hidden">
+            <h2>🤖 AI IT Support Assistant</h2>
+            <div class="chat-box" id="adminChatBox">
+                <div class="msg bot">Hello Admin! Ask me any technical troubleshooting question to assist with support tickets.</div>
+            </div>
+            <div class="chat-input-row">
+                <input type="text" id="adminChatInput" placeholder="e.g., How to reset Windows DNS cache..." onkeypress="if(event.key==='Enter') sendChatMessage('admin')">
+                <button onclick="sendChatMessage('admin')">Send</button>
+            </div>
+        </div>
+
+        <!-- 页面 3：查看 Admin (上限 3) 和 User (上限 100) 账号密码 -->
+        <div id="adminAccountsView" class="card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                    <h2 style="margin-bottom: 4px; border: none;">👥 Registered Accounts & Passwords</h2>
+                    <span id="accountCountBadge" style="font-size: 13px; color: #64748b; font-weight: 600;">Admins: 0 / 3 | Users: 0 / 100</span>
+                </div>
+                <button onclick="loadAccounts()" style="background: #64748b; padding: 7px 14px; font-size: 13px;">🔄 Refresh</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Role</th>
+                            <th>Username</th>
+                            <th>Password</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- ==================== 普通用户主界面 ==================== -->
+<div id="userApp" class="hidden">
+    <div class="container">
+        <div class="card">
+            <h2>🤖 AI IT Support Assistant</h2>
+            <div class="chat-box" id="userChatBox">
+                <div class="msg bot">Hello! I am your AI IT Assistant. Describe your computer, network, printer, or software problem, and I will help you troubleshoot it step by step.</div>
+            </div>
+            <div class="chat-input-row">
+                <input type="text" id="userChatInput" placeholder="e.g., My Wi-Fi keeps disconnecting..." onkeypress="if(event.key==='Enter') sendChatMessage('user')">
+                <button onclick="sendChatMessage('user')">Send</button>
+            </div>
+        </div>
+
+        <div class="card">
             <h2>📝 Submit Support Ticket</h2>
             <div class="form-group">
                 <label>Your Name *</label>
@@ -195,7 +295,7 @@
 
     <div class="tickets-section card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h2 id="ticketsHeading" style="margin-bottom: 0; border: none;">📋 My Support Tickets</h2>
+            <h2 style="margin-bottom: 0; border: none;">📋 My Support Tickets (Private)</h2>
             <button onclick="loadTickets()" style="background: #64748b; padding: 7px 14px; font-size: 13px;">🔄 Refresh</button>
         </div>
         <div style="overflow-x: auto;">
@@ -210,10 +310,9 @@
                         <th>Description</th>
                         <th>Time</th>
                         <th>Status</th>
-                        <th id="actionColHeader" class="hidden">Action</th>
                     </tr>
                 </thead>
-                <tbody id="ticketTableBody"></tbody>
+                <tbody id="userTicketTableBody"></tbody>
             </table>
         </div>
     </div>
@@ -249,7 +348,31 @@
         }
     }
 
+    function switchAdminTab(tab) {
+        document.getElementById("navTickets").classList.remove("active");
+        document.getElementById("navChat").classList.remove("active");
+        document.getElementById("navAccounts").classList.remove("active");
+
+        document.getElementById("adminTicketsView").classList.add("hidden");
+        document.getElementById("adminChatView").classList.add("hidden");
+        document.getElementById("adminAccountsView").classList.add("hidden");
+
+        if (tab === "tickets") {
+            document.getElementById("navTickets").classList.add("active");
+            document.getElementById("adminTicketsView").classList.remove("hidden");
+            loadTickets();
+        } else if (tab === "chat") {
+            document.getElementById("navChat").classList.add("active");
+            document.getElementById("adminChatView").classList.remove("hidden");
+        } else if (tab === "accounts") {
+            document.getElementById("navAccounts").classList.add("active");
+            document.getElementById("adminAccountsView").classList.remove("hidden");
+            loadAccounts();
+        }
+    }
+
     async function handleRegister() {
+        const role = document.getElementById("regRole").value;
         const username = document.getElementById("regUser").value.trim();
         const password = document.getElementById("regPass").value.trim();
         const msgEl = document.getElementById("authMsg");
@@ -257,7 +380,7 @@
         const res = await fetch("/api/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password, role })
         });
         const data = await res.json();
 
@@ -296,7 +419,8 @@
     async function logout() {
         await fetch("/api/logout", { method: "POST" });
         if (syncTimer) clearInterval(syncTimer);
-        document.getElementById("mainApp").classList.add("hidden");
+        document.getElementById("adminApp").classList.add("hidden");
+        document.getElementById("userApp").classList.add("hidden");
         document.getElementById("topHeader").classList.add("hidden");
         document.getElementById("authSection").classList.remove("hidden");
         document.getElementById("loginPass").value = "";
@@ -309,27 +433,19 @@
         document.getElementById("currentRole").textContent = role.toUpperCase();
         document.getElementById("authSection").classList.add("hidden");
         document.getElementById("topHeader").classList.remove("hidden");
-        document.getElementById("mainApp").classList.remove("hidden");
-
-        const submitCard = document.getElementById("submitTicketCard");
-        const topGrid = document.getElementById("topGridContainer");
-        const headerSubtitle = document.getElementById("headerSubtitle");
 
         if (role === "admin") {
-            submitCard.classList.add("hidden");
-            topGrid.classList.add("admin-mode");
-            headerSubtitle.textContent = "Admin Console: Manage all user support tickets and assist troubleshooting with AI.";
-            document.getElementById("ticketsHeading").textContent = "📋 All Support Tickets (Admin View)";
-            document.getElementById("actionColHeader").classList.remove("hidden");
+            document.getElementById("userApp").classList.add("hidden");
+            document.getElementById("adminApp").classList.remove("hidden");
+            document.getElementById("headerSubtitle").textContent = "Admin Console: Manage support tickets, use AI Assistant, or inspect registered accounts.";
+            switchAdminTab("tickets");
         } else {
-            submitCard.classList.remove("hidden");
-            topGrid.classList.remove("admin-mode");
-            headerSubtitle.textContent = "Ask our AI Assistant for instant troubleshooting, or submit a ticket for IT engineer support.";
-            document.getElementById("ticketsHeading").textContent = "📋 My Support Tickets (Private)";
-            document.getElementById("actionColHeader").classList.add("hidden");
+            document.getElementById("adminApp").classList.add("hidden");
+            document.getElementById("userApp").classList.remove("hidden");
+            document.getElementById("headerSubtitle").textContent = "Ask our AI Assistant for instant troubleshooting, or submit a ticket for IT engineer support.";
+            loadTickets();
         }
 
-        loadTickets();
         if (syncTimer) clearInterval(syncTimer);
         syncTimer = setInterval(loadTickets, 10000);
     }
@@ -342,8 +458,8 @@
         }
     }
 
-    function appendChat(text, isUser) {
-        const chatBox = document.getElementById("chatBox");
+    function appendChat(boxId, text, isUser) {
+        const chatBox = document.getElementById(boxId);
         const div = document.createElement("div");
         div.className = "msg " + (isUser ? "user" : "bot");
         div.textContent = text;
@@ -352,14 +468,16 @@
         return div;
     }
 
-    async function sendChatMessage() {
-        const input = document.getElementById("chatInput");
+    async function sendChatMessage(mode) {
+        const inputId = mode === "admin" ? "adminChatInput" : "userChatInput";
+        const boxId = mode === "admin" ? "adminChatBox" : "userChatBox";
+        const input = document.getElementById(inputId);
         const message = input.value.trim();
         if (!message) return;
 
-        appendChat(message, true);
+        appendChat(boxId, message, true);
         input.value = "";
-        const loadingMsg = appendChat("Thinking...", false);
+        const loadingMsg = appendChat(boxId, "Thinking...", false);
 
         try {
             const response = await fetch("/api/chat", {
@@ -414,7 +532,9 @@
         const response = await fetch("/api/tickets");
         if (!response.ok) return;
         const tickets = await response.json();
-        const tbody = document.getElementById("ticketTableBody");
+
+        const tbodyId = currentUserRole === "admin" ? "adminTicketTableBody" : "userTicketTableBody";
+        const tbody = document.getElementById(tbodyId);
         tbody.innerHTML = "";
 
         tickets.forEach(t => {
@@ -438,6 +558,69 @@
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    function toggleTablePassword(spanId, btn, plainPw) {
+        const span = document.getElementById(spanId);
+        if (span.dataset.shown === "1") {
+            span.textContent = "••••••••";
+            span.dataset.shown = "0";
+            btn.textContent = "Show";
+        } else {
+            span.textContent = plainPw || "(Not recorded)";
+            span.dataset.shown = "1";
+            btn.textContent = "Hide";
+        }
+    }
+
+    async function loadAccounts() {
+        const res = await fetch("/api/admin/users");
+        if (!res.ok) return;
+        const data = await res.json();
+        const users = data.users || [];
+
+        const adminCount = users.filter(u => u.role === "admin").length;
+        const userCount = users.filter(u => u.role === "user").length;
+        document.getElementById("accountCountBadge").textContent =
+            `Admins: ${adminCount} / ${data.max_admins}  |  Users: ${userCount} / ${data.max_users}`;
+
+        const tbody = document.getElementById("accountsTableBody");
+        tbody.innerHTML = "";
+
+        users.forEach(u => {
+            const tr = document.createElement("tr");
+            const roleBadge = u.role === "admin"
+                ? `<span class="badge role-admin">ADMIN</span>`
+                : `<span class="badge role-user">USER</span>`;
+            const safePw = (u.plain_password || "").replace(/'/g, "\\'");
+            const isSelf = u.username === data.current_username;
+            const deleteBtn = isSelf
+                ? `<span style="color: #94a3b8; font-size: 12px;">Current Session</span>`
+                : `<button class="btn-danger" onclick="deleteUserAccount(${u.id}, '${u.username}')">Delete</button>`;
+
+            tr.innerHTML = `
+                <td>#${u.id}</td>
+                <td>${roleBadge}</td>
+                <td><strong>${u.username}</strong></td>
+                <td>
+                    <span id="pw_${u.id}" data-shown="0" style="font-family: monospace; margin-right: 8px;">••••••••</span>
+                    <button class="btn-secondary" onclick="toggleTablePassword('pw_${u.id}', this, '${safePw}')">Show</button>
+                </td>
+                <td>${deleteBtn}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function deleteUserAccount(id, username) {
+        if (!confirm(`Are you sure you want to delete account "${username}"?`)) return;
+        const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (res.ok) {
+            loadAccounts();
+        } else {
+            alert(data.error || "Failed to delete account.");
+        }
     }
 
     initSession();
