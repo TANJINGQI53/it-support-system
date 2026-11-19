@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered IT Support Ticketing System</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f4f8; color: #1e293b; padding: 20px; }
+        .header { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+        .header h1 { font-size: 24px; margin-bottom: 6px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1300px; margin: 0 auto; }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
+        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        .card h2 { font-size: 18px; color: #0f172a; margin-bottom: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #475569; }
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        textarea { resize: vertical; height: 90px; }
+        button { background: #2563eb; color: white; border: none; padding: 11px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #1d4ed8; }
+        .chat-box { height: 340px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #f8fafc; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 82%; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+        .msg.user { background: #2563eb; color: white; align-self: flex-end; }
+        .msg.bot { background: #e2e8f0; color: #1e293b; align-self: flex-start; }
+        .chat-input-row { display: flex; gap: 10px; }
+        .chat-input-row input { flex: 1; }
+        .tickets-section { max-width: 1300px; margin: 24px auto 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f8fafc; color: #475569; font-weight: 600; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge.Open { background: #fef3c7; color: #d97706; }
+        .badge.Resolved { background: #dcfce7; color: #16a34a; }
+        .btn-resolve { background: #10b981; padding: 6px 12px; font-size: 12px; }
+        .btn-resolve:hover { background: #059669; }
+    </style>
+</head>
+<body>
+
+<div class="header" style="max-width: 1300px; margin: 0 auto 24px;">
+    <h1>🛠️ AI-Powered IT Support Ticketing System</h1>
+    <p>Ask our AI Assistant for instant troubleshooting, or submit a ticket for live IT engineer support.</p>
+</div>
+
+<div class="container">
+    <!-- 左侧：AI 聊天助手 -->
+    <div class="card">
+        <h2>🤖 AI IT Support Assistant</h2>
+        <div class="chat-box" id="chatBox">
+            <div class="msg bot">Hello! I am your AI IT Assistant. Describe your computer, network, printer, or software problem, and I will help you troubleshoot it step by step.</div>
+        </div>
+        <div class="chat-input-row">
+            <input type="text" id="chatInput" placeholder="e.g., My Wi-Fi keeps disconnecting..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <button onclick="sendChatMessage()">Send</button>
+        </div>
+    </div>
+
+    <!-- 右侧：提交工单 -->
+    <div class="card">
+        <h2>📝 Submit Support Ticket</h2>
+        <div class="form-group">
+            <label>Your Name *</label>
+            <input type="text" id="userName" placeholder="Enter your full name">
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+                <label>Department</label>
+                <select id="userDept">
+                    <option value="IT">IT</option>
+                    <option value="HR">HR</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Student / Staff">Student / Staff</option>
+                </select>
+            </div>
+            <div>
+                <label>Category</label>
+                <select id="ticketCat">
+                    <option value="Network / Wi-Fi">Network / Wi-Fi</option>
+                    <option value="Hardware">Hardware</option>
+                    <option value="Software">Software</option>
+                    <option value="Account / Password">Account / Password</option>
+                    <option value="Printer">Printer</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Priority</label>
+            <select id="ticketPriority">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+                <option value="Urgent">Urgent</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Issue Description *</label>
+            <textarea id="ticketDesc" placeholder="Please describe the issue in detail..."></textarea>
+        </div>
+        <button onclick="submitTicket()" style="width: 100%;">Submit Ticket</button>
+    </div>
+</div>
+
+<!-- 底部：实时同步工单列表 -->
+<div class="tickets-section card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="margin-bottom: 0; border: none;">📋 Live Support Tickets (Auto-Synced)</h2>
+        <button onclick="loadTickets()" style="background: #64748b; padding: 7px 14px; font-size: 13px;">🔄 Refresh</button>
+    </div>
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Dept</th>
+                    <th>Category</th>
+                    <th>Priority</th>
+                    <th>Description</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="ticketTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function appendChat(text, isUser) {
+        const chatBox = document.getElementById("chatBox");
+        const div = document.createElement("div");
+        div.className = "msg " + (isUser ? "user" : "bot");
+        div.textContent = text;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return div;
+    }
+
+    async function sendChatMessage() {
+        const input = document.getElementById("chatInput");
+        const message = input.value.trim();
+        if (!message) return;
+
+        appendChat(message, true);
+        input.value = "";
+        const loadingMsg = appendChat("Thinking...", false);
+
+        try {
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: message })
+            });
+            const data = await response.json();
+            loadingMsg.textContent = data.reply;
+        } catch (err) {
+            loadingMsg.textContent = "Network error. Please check your connection and try again.";
+        }
+    }
+
+    async function submitTicket() {
+        const name = document.getElementById("userName").value.trim();
+        const department = document.getElementById("userDept").value;
+        const category = document.getElementById("ticketCat").value;
+        const priority = document.getElementById("ticketPriority").value;
+        const description = document.getElementById("ticketDesc").value.trim();
+
+        if (!name || !description) {
+            alert("Please enter both your name and issue description.");
+            return;
+        }
+
+        const response = await fetch("/api/tickets", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, department, category, priority, description })
+        });
+
+        if (response.ok) {
+            document.getElementById("ticketDesc").value = "";
+            alert("Ticket submitted successfully!");
+            loadTickets();
+        } else {
+            alert("Failed to submit ticket.");
+        }
+    }
+
+    async function resolveTicket(id) {
+        await fetch(`/api/tickets/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "Resolved" })
+        });
+        loadTickets();
+    }
+
+    async function loadTickets() {
+        const response = await fetch("/api/tickets");
+        const tickets = await response.json();
+        const tbody = document.getElementById("ticketTableBody");
+        tbody.innerHTML = "";
+
+        tickets.forEach(t => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>#${t.id}</td>
+                <td><strong>${t.name}</strong></td>
+                <td>${t.department}</td>
+                <td>${t.category}</td>
+                <td>${t.priority}</td>
+                <td>${t.description}</td>
+                <td style="font-size: 12px; color: #64748b;">${t.created_at}</td>
+                <td><span class="badge ${t.status}">${t.status}</span></td>
+                <td>
+                    ${t.status === 'Open' 
+                        ? `<button class="btn-resolve" onclick="resolveTicket(${t.id})">Mark Resolved</button>` 
+                        : `<span style="color: #94a3b8; font-size: 12px;">Done</span>`}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    loadTickets();
+    setInterval(loadTickets, 10000); // 每10秒自动同步一次多人数据
+</script>
+
+</body>
+</html>
