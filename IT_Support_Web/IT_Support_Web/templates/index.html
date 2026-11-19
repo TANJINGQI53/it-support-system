@@ -8,7 +8,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f0f4f8; color: #1e293b; padding: 20px; min-height: 100vh; }
 
-        /* 登录后顶部栏 */
         .header { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding: 24px; border-radius: 12px; margin: 0 auto 24px; max-width: 1300px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .header h1 { font-size: 24px; margin-bottom: 6px; }
         .header p { font-size: 14px; opacity: 0.9; }
@@ -16,7 +15,6 @@
         .btn-logout { background: #ef4444; padding: 6px 12px; font-size: 13px; }
         .btn-logout:hover { background: #dc2626; }
 
-        /* 左右分栏现代登录卡片 */
         .split-auth-container { max-width: 900px; margin: 45px auto; background: white; border-radius: 18px; overflow: hidden; display: grid; grid-template-columns: 1.05fr 1fr; box-shadow: 0 12px 35px rgba(15, 23, 42, 0.1); }
         @media (max-width: 768px) { .split-auth-container { grid-template-columns: 1fr; margin: 20px auto; } }
 
@@ -39,7 +37,6 @@
         .toggle-pw:hover { color: #1e293b; }
         .auth-msg { font-size: 13px; margin-top: 12px; text-align: center; min-height: 18px; }
 
-        /* 主界面样式 */
         .container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1300px; margin: 0 auto; }
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
         .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
@@ -71,7 +68,6 @@
 </head>
 <body>
 
-<!-- 登录后才显示的顶部导航栏 -->
 <div id="topHeader" class="header hidden">
     <div>
         <h1>🛠️ AI-Powered IT Support Ticketing System</h1>
@@ -83,7 +79,6 @@
     </div>
 </div>
 
-<!-- 左右分栏现代登录 / 注册界面 -->
 <div id="authSection" class="split-auth-container">
     <div class="auth-banner">
         <div>
@@ -139,10 +134,8 @@
     </div>
 </div>
 
-<!-- 主工作台（登录后显示） -->
 <div id="mainApp" class="hidden">
     <div class="container">
-        <!-- 左侧：AI 聊天助手 -->
         <div class="card">
             <h2>🤖 AI IT Support Assistant</h2>
             <div class="chat-box" id="chatBox">
@@ -154,7 +147,6 @@
             </div>
         </div>
 
-        <!-- 右侧：提交工单 -->
         <div class="card">
             <h2>📝 Submit Support Ticket</h2>
             <div class="form-group">
@@ -200,7 +192,6 @@
         </div>
     </div>
 
-    <!-- 底部：隐私隔离工单列表（普通用户仅见自己，管理员见全部） -->
     <div class="tickets-section card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <h2 id="ticketsHeading" style="margin-bottom: 0; border: none;">📋 My Support Tickets</h2>
