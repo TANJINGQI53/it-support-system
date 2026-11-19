@@ -261,7 +261,7 @@ def ai_chat():
             'reply': '⚠️ AI_API_KEY is not configured on the server yet. Please add it in Render Environment Variables, or submit a ticket directly.'
         }), 500
 
-   model_name = os.environ.get("AI_MODEL", "gemini-2.5-flash")
+    model_name = os.environ.get("AI_MODEL", "gemini-2.5-flash")
     # Google AI Studio 生成的 AQ. 密钥专用：原生接口 + x-goog-api-key 请求头
     api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
 
@@ -286,7 +286,8 @@ def ai_chat():
 
     try:
         res = requests.post(api_url, headers=headers, json=payload, timeout=20)
-        res.raise_for_status()
+        if not res.ok:
+            return jsonify({'reply': f'AI API Error ({res.status_code}): {res.text}'}), 500
         reply = res.json()['candidates'][0]['content']['parts'][0]['text']
         return jsonify({'reply': reply})
     except Exception as e:
