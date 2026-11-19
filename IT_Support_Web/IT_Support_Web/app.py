@@ -67,7 +67,6 @@ def init_db():
             )
         ''')
 
-    # 初始化默认管理员（不在前端显示，可通过环境变量 ADMIN_USER / ADMIN_PASS 自定义）
     admin_user = os.environ.get("ADMIN_USER", "admin")
     admin_pass = os.environ.get("ADMIN_PASS", "admin123")
     admin_hash = generate_password_hash(admin_pass)
