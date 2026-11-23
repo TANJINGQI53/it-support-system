@@ -341,31 +341,64 @@ def update_ticket(ticket_id):
     conn.close()
     return jsonify({'message': 'Status updated'})
 
-def get_fast_fallback_models(api_key, primary_model):
-    models = [primary_model]
-    excluded = ("tts", "audio", "image", "embedding", "aqa", "vision", "pro")
-    try:
-        res = requests.get(
-            "https://generativelanguage.googleapis.com/v1beta/models",
-            headers={"x-goog-api-key": api_key},
-            timeout=5
+def get_instant_kb_recommendation(category, description, is_admin=False):
+    """当云端 AI 拥堵或超时时，秒级自动匹配本地 IT 知识库排查方案"""
+    kb = {
+        "Network / Wi-Fi": (
+            "1. Quick Diagnosis\n"
+            "Likely DNS cache conflict, DHCP IP lease stall, or local Wi-Fi adapter driver glitch.\n\n"
+            "2. Step-by-Step Resolution Checklist\n"
+            "• Toggle Wi-Fi / Airplane mode OFF for 10 seconds, then reconnect.\n"
+            "• Open Command Prompt / Terminal and run: ipconfig /flushdns (Windows) or sudo dscacheutil -flushcache (macOS).\n"
+            "• Forget the Wi-Fi network and re-enter credentials, or test with an Ethernet cable.\n"
+            "• Restart your router / access point if multiple devices are affected.\n\n"
+            "3. Escalation Criteria\n"
+            "Submit a ticket if only your workstation fails to obtain an IP address (port/VLAN assignment check required)."
+        ),
+        "Hardware": (
+            "1. Quick Diagnosis\n"
+            "Peripheral connection drop, power state lockup, or thermal/port hardware fault.\n\n"
+            "2. Step-by-Step Resolution Checklist\n"
+            "• Unplug all external USB hubs, monitors, and power cables; hold the power button for 15 seconds (hard power drain).\n"
+            "• Test the device on a different wall outlet or port to rule out cable/dock failure.\n"
+            "• Check Device Manager / System Information for warning icons on the affected component.\n\n"
+            "3. Escalation Criteria\n"
+            "Submit a ticket immediately if there is physical damage, overheating, battery swelling, or no power indicator."
+        ),
+        "Software": (
+            "1. Quick Diagnosis\n"
+            "Application cache corruption, hung background process, or pending OS/app version mismatch.\n\n"
+            "2. Step-by-Step Resolution Checklist\n"
+            "• Open Task Manager (Ctrl+Shift+Esc) / Activity Monitor and force-quit all instances of the frozen app.\n"
+            "• Restart the computer to clear locked temporary files and memory leaks.\n"
+            "• Check for pending app or OS updates and clear the application's local cache folder.\n\n"
+            "3. Escalation Criteria\n"
+            "Submit a ticket if reinstallation, license activation, or local administrator elevation is required."
+        ),
+        "Account / Password": (
+            "1. Quick Diagnosis\n"
+            "Credential cache expiration, account lockout after failed attempts, or MFA token sync drift.\n\n"
+            "2. Step-by-Step Resolution Checklist\n"
+            "• Verify Caps Lock is off and test signing in via an Incognito/Private browser window.\n"
+            "• Wait 15 minutes if temporary brute-force lockout was triggered.\n"
+            "• Clear saved passwords in Windows Credential Manager / macOS Keychain.\n\n"
+            "3. Escalation Criteria\n"
+            "Submit a ticket with your username and department so an IT Admin can reset your password or unlock your account."
+        ),
+        "Printer": (
+            "1. Quick Diagnosis\n"
+            "Stalled print spooler queue, offline printer status, or paper/toner sensor fault.\n\n"
+            "2. Step-by-Step Resolution Checklist\n"
+            "• Check the printer LCD screen for paper jam, low toner, or offline warnings.\n"
+            "• Cancel all stuck documents in 'Printers & Scanners' -> 'Open print queue'.\n"
+            "• Restart the printer and verify both PC and printer are on the same office subnet.\n\n"
+            "3. Escalation Criteria\n"
+            "Submit a ticket if the print spooler service needs restarting or network printer IP remapping is needed."
         )
-        if res.ok:
-            for m in res.json().get("models", []):
-                methods = m.get("supportedGenerationMethods", [])
-                name = m.get("name", "").replace("models/", "")
-                if (
-                    "generateContent" in methods
-                    and "flash" in name
-                    and not any(kw in name for kw in excluded)
-                    and name not in models
-                ):
-                    models.append(name)
-                    if len(models) >= 2:
-                        break
-    except Exception:
-        pass
-    return models
+    }
+    base = kb.get(category, kb["Software"])
+    header = "[Auto-Matched IT Knowledge Base Solution]\n" if not is_admin else "[Auto-Matched Engineering Playbook]\n"
+    return f"{header}Issue Summary: {description}\n\n{base}"
 
 @app.route('/api/recommend', methods=['POST'])
 def ai_recommendation():
@@ -379,35 +412,34 @@ def ai_recommendation():
     description = data.get('description', '').strip()
 
     if not description:
-        return jsonify({'recommendation': 'Please enter an issue description first so AI can analyze it.'}), 400
-
-    api_key = os.environ.get("AI_API_KEY")
-    if not api_key:
-        return jsonify({
-            'recommendation': '⚠️ AI_API_KEY is not configured on the server yet. Please submit a support ticket directly.'
-        }), 500
-
-    primary_model = os.environ.get("AI_MODEL", "gemini-3.8-flash")
-    models_to_try = get_fast_fallback_models(api_key, primary_model)
+        return jsonify({'recommendation': 'Please enter an issue description first.'}), 400
 
     is_admin = session.get('role') == 'admin'
+    api_key = os.environ.get("AI_API_KEY")
+
+    # 如果未配置 API Key，直接秒级返回本地知识库方案
+    if not api_key:
+        return jsonify({
+            'recommendation': get_instant_kb_recommendation(category, description, is_admin),
+            'source': 'kb'
+        })
+
+    model_name = os.environ.get("AI_MODEL", "gemini-3.8-flash")
     if is_admin:
         sys_prompt = (
             "You are a Senior IT Support Engineer Advisor. Given a support ticket's category, priority, department, and issue description, "
-            "provide a structured, actionable resolution plan for the IT admin:\n"
+            "provide a concise, structured resolution plan:\n"
             "1. Likely Root Cause\n"
             "2. Step-by-Step Resolution Checklist\n"
-            "3. Verification & Escalation Notes\n"
-            "Keep it concise, technical, and directly actionable."
+            "3. Verification & Escalation Notes"
         )
     else:
         sys_prompt = (
             "You are an automated IT Troubleshooting Recommendation Engine. Given a user's issue category, priority, and description, "
-            "provide a clear, structured self-service recommendation:\n"
+            "provide a concise, structured self-service recommendation:\n"
             "1. Quick Diagnosis\n"
-            "2. Step-by-Step Fix to Try Now (3-5 concise steps)\n"
-            "3. When to Submit a Ticket (e.g., if admin rights or hardware replacement is needed)\n"
-            "Do not act as a conversational chatbot; output only the structured troubleshooting recommendation."
+            "2. Step-by-Step Fix to Try Now (3-4 steps)\n"
+            "3. When to Submit a Ticket"
         )
 
     user_prompt = (
@@ -417,45 +449,30 @@ def ai_recommendation():
         f"Issue Description: {description}"
     )
 
+    api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
     headers = {
         "Content-Type": "application/json",
         "x-goog-api-key": api_key
     }
     payload = {
-        "systemInstruction": {
-            "parts": [{"text": sys_prompt}]
-        },
-        "contents": [{
-            "role": "user",
-            "parts": [{"text": user_prompt}]
-        }],
-        "generationConfig": {
-            "temperature": 0.4
-        }
+        "systemInstruction": {"parts": [{"text": sys_prompt}]},
+        "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
+        "generationConfig": {"temperature": 0.4}
     }
 
-    last_error = "The AI recommendation service is temporarily busy. Please try again in a few seconds."
-    for model_name in models_to_try:
-        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
-        try:
-            res = requests.post(api_url, headers=headers, json=payload, timeout=12)
-            if res.ok:
-                rec_text = res.json()['candidates'][0]['content']['parts'][0]['text']
-                return jsonify({'recommendation': rec_text})
-            if res.status_code in (429, 503):
-                last_error = f"Model ({model_name}) is currently experiencing high demand."
-                continue
-            if res.status_code in (400, 404):
-                continue
-            return jsonify({'recommendation': f'AI API Error ({res.status_code}): {res.text}'}), 500
-        except requests.exceptions.Timeout:
-            last_error = f"Model ({model_name}) timed out."
-            continue
-        except Exception as e:
-            last_error = str(e)
-            continue
+    # 严格限制 6 秒超时，绝不卡死；一旦超时或 503 拥堵，1 秒内自动切换本地知识库秒出结果
+    try:
+        res = requests.post(api_url, headers=headers, json=payload, timeout=6)
+        if res.ok:
+            rec_text = res.json()['candidates'][0]['content']['parts'][0]['text']
+            return jsonify({'recommendation': rec_text, 'source': 'ai'})
+    except Exception:
+        pass
 
-    return jsonify({'recommendation': f'{last_error} Please try again in a few seconds or proceed with the ticket.'}), 200
+    return jsonify({
+        'recommendation': get_instant_kb_recommendation(category, description, is_admin),
+        'source': 'kb'
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
