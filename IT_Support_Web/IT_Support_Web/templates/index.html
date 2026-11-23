@@ -65,6 +65,8 @@
         .rec-placeholder { color: #64748b; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 290px; gap: 10px; }
         .btn-ai { background: linear-gradient(135deg, #4f46e5, #2563eb); }
         .btn-ai:hover { background: linear-gradient(135deg, #4338ca, #1d4ed8); }
+        .btn-search { background: #0ea5e9; padding: 6px 12px; font-size: 12px; }
+        .btn-search:hover { background: #0284c7; }
         .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         @media (max-width: 500px) { .btn-row { grid-template-columns: 1fr; } }
 
@@ -240,7 +242,10 @@
             </div>
             <button class="btn-ai" onclick="getAIRecommendation('admin')" style="width: 100%; margin-bottom: 16px;">✨ Generate AI Resolution Recommendation</button>
 
-            <label>Recommended Engineering Solution</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label style="margin-bottom: 0;">Recommended Engineering Solution</label>
+                <button type="button" class="btn-search" onclick="searchWebSolution('admin')">🔍 Auto Web Search</button>
+            </div>
             <div id="adminRecResult" class="rec-box">
                 <div class="rec-placeholder">
                     <span style="font-size: 28px;">✨</span>
@@ -329,12 +334,15 @@
 
         <!-- 右侧：AI Recommendation 诊断建议面板 -->
         <div class="card">
-            <h2>✨ AI Troubleshooting Recommendation</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 16px;">
+                <h2 style="margin-bottom: 0; border: none; padding-bottom: 0;">✨ AI Troubleshooting Recommendation</h2>
+                <button type="button" class="btn-search" onclick="searchWebSolution('user')">🔍 Auto Web Search</button>
+            </div>
             <div id="userRecResult" class="rec-box">
                 <div class="rec-placeholder">
                     <span style="font-size: 32px;">💡</span>
                     <strong>Need a quick fix before submitting a ticket?</strong>
-                    <span>Fill in your category and issue description on the left, then click <strong>"✨ Get AI Recommendation"</strong> for step-by-step troubleshooting advice.</span>
+                    <span>Fill in your category and issue description on the left, then click <strong>"✨ Get AI Recommendation"</strong> for instant step-by-step troubleshooting advice.</span>
                 </div>
             </div>
         </div>
@@ -506,6 +514,14 @@
         }
     }
 
+    function searchWebSolution(mode) {
+        const isAdmin = mode === "admin";
+        const category = document.getElementById(isAdmin ? "adminRecCat" : "ticketCat").value;
+        const description = document.getElementById(isAdmin ? "adminRecDesc" : "ticketDesc").value.trim();
+        const query = encodeURIComponent(`IT troubleshooting ${category} ${description}`);
+        window.open(`https://www.google.com/search?q=${query}`, "_blank", "noopener");
+    }
+
     async function getAIRecommendation(mode) {
         const isAdmin = mode === "admin";
         const department = document.getElementById(isAdmin ? "adminRecDept" : "userDept").value;
@@ -519,7 +535,7 @@
             return;
         }
 
-        resultBox.innerHTML = `<div class="rec-placeholder"><span style="font-size: 24px;">⏳</span><span>Analyzing issue and generating AI recommendation...</span></div>`;
+        resultBox.innerHTML = `<div class="rec-placeholder"><span style="font-size: 24px;">⚡</span><span>Searching best resolution steps...</span></div>`;
 
         try {
             const response = await fetch("/api/recommend", {
@@ -530,7 +546,8 @@
             const data = await response.json();
             resultBox.textContent = data.recommendation;
         } catch (err) {
-            resultBox.textContent = "Network error. Please check your connection and try again.";
+            // 即使极端断网，前端也能直接触发一键自动搜索兜底
+            resultBox.innerHTML = `<div class="rec-placeholder"><span>Connection interrupted. Click <strong>"🔍 Auto Web Search"</strong> above to search solutions immediately.</span></div>`;
         }
     }
 
