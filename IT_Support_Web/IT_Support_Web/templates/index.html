@@ -56,15 +56,18 @@
         label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #475569; }
         input, select, textarea { width: 100%; padding: 11px 13px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb; }
-        textarea { resize: vertical; height: 90px; }
+        textarea { resize: vertical; height: 95px; }
         button { background: #2563eb; color: white; border: none; padding: 12px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         button:hover { background: #1d4ed8; }
-        .chat-box { height: 380px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; background: #f8fafc; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 82%; padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
-        .msg.user { background: #2563eb; color: white; align-self: flex-end; }
-        .msg.bot { background: #e2e8f0; color: #1e293b; align-self: flex-start; }
-        .chat-input-row { display: flex; gap: 10px; }
-        .chat-input-row input { flex: 1; }
+
+        /* AI Recommendation 结果卡片样式 */
+        .rec-box { min-height: 330px; max-height: 440px; overflow-y: auto; border: 1px solid #dbeafe; border-radius: 10px; padding: 18px; background: linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%); font-size: 14px; line-height: 1.65; color: #1e293b; white-space: pre-wrap; }
+        .rec-placeholder { color: #64748b; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 290px; gap: 10px; }
+        .btn-ai { background: linear-gradient(135deg, #4f46e5, #2563eb); }
+        .btn-ai:hover { background: linear-gradient(135deg, #4338ca, #1d4ed8); }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 500px) { .btn-row { grid-template-columns: 1fr; } }
+
         .tickets-section { max-width: 1300px; margin: 24px auto 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
@@ -74,8 +77,10 @@
         .badge.Resolved { background: #dcfce7; color: #16a34a; }
         .badge.role-admin { background: #dbeafe; color: #1d4ed8; }
         .badge.role-user { background: #f1f5f9; color: #475569; }
-        .btn-resolve { background: #10b981; padding: 6px 12px; font-size: 12px; }
+        .btn-resolve { background: #10b981; padding: 6px 10px; font-size: 12px; }
         .btn-resolve:hover { background: #059669; }
+        .btn-diagnose { background: #4f46e5; padding: 6px 10px; font-size: 12px; margin-right: 6px; }
+        .btn-diagnose:hover { background: #4338ca; }
         .btn-danger { background: #ef4444; padding: 6px 12px; font-size: 12px; }
         .btn-danger:hover { background: #dc2626; }
         .btn-secondary { background: #64748b; padding: 5px 10px; font-size: 12px; }
@@ -88,7 +93,7 @@
 <div id="topHeader" class="header hidden">
     <div>
         <h1>🛠️ AI-Powered IT Support Ticketing System</h1>
-        <p id="headerSubtitle">Ask our AI Assistant for instant troubleshooting, or submit a ticket for IT engineer support.</p>
+        <p id="headerSubtitle">Get instant AI troubleshooting recommendations, or submit a ticket for IT engineer support.</p>
     </div>
     <div id="userBar" class="user-bar">
         <span>Signed in as: <strong id="currentUsername"></strong> (<span id="currentRole"></span>)</span>
@@ -102,9 +107,9 @@
         <div>
             <span class="brand-badge">IT SERVICE DESK PORTAL</span>
             <h2>Smart IT Support, Powered by AI.</h2>
-            <p>Diagnose technical issues instantly with our AI Assistant or raise a private support ticket directly to our engineering team.</p>
+            <p>Receive instant AI troubleshooting recommendations for your technical issues or raise a private support ticket directly to our engineering team.</p>
             <ul class="feature-list">
-                <li><span class="feature-icon">✓</span> Instant AI-guided troubleshooting</li>
+                <li><span class="feature-icon">✓</span> Instant AI troubleshooting recommendations</li>
                 <li><span class="feature-icon">✓</span> Real-time ticket status tracking</li>
                 <li><span class="feature-icon">✓</span> Role-based access (Up to 3 Admins & 100 Users)</li>
             </ul>
@@ -164,7 +169,7 @@
     <aside class="admin-sidebar">
         <div class="sidebar-title">Admin Navigation</div>
         <button id="navTickets" class="nav-item active" onclick="switchAdminTab('tickets')">📋 Support Tickets</button>
-        <button id="navChat" class="nav-item" onclick="switchAdminTab('chat')">🤖 AI IT Assistant</button>
+        <button id="navRec" class="nav-item" onclick="switchAdminTab('rec')">✨ AI Recommendation</button>
         <button id="navAccounts" class="nav-item" onclick="switchAdminTab('accounts')">👥 Accounts & Passwords</button>
     </aside>
 
@@ -195,15 +200,52 @@
             </div>
         </div>
 
-        <!-- 页面 2：AI 聊天 -->
-        <div id="adminChatView" class="card hidden">
-            <h2>🤖 AI IT Support Assistant</h2>
-            <div class="chat-box" id="adminChatBox">
-                <div class="msg bot">Hello Admin! Ask me any technical troubleshooting question to assist with support tickets.</div>
+        <!-- 页面 2：AI Recommendation（管理员诊断建议页面） -->
+        <div id="adminRecView" class="card hidden">
+            <h2>✨ AI Resolution Recommendation</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <label>Department</label>
+                    <select id="adminRecDept">
+                        <option value="IT">IT</option>
+                        <option value="HR">HR</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Student / Staff">Student / Staff</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Category</label>
+                    <select id="adminRecCat">
+                        <option value="Network / Wi-Fi">Network / Wi-Fi</option>
+                        <option value="Hardware">Hardware</option>
+                        <option value="Software">Software</option>
+                        <option value="Account / Password">Account / Password</option>
+                        <option value="Printer">Printer</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Priority</label>
+                    <select id="adminRecPriority">
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                        <option value="Urgent">Urgent</option>
+                    </select>
+                </div>
             </div>
-            <div class="chat-input-row">
-                <input type="text" id="adminChatInput" placeholder="e.g., How to reset Windows DNS cache..." onkeypress="if(event.key==='Enter') sendChatMessage('admin')">
-                <button onclick="sendChatMessage('admin')">Send</button>
+            <div class="form-group">
+                <label>Issue Details / Ticket Description *</label>
+                <textarea id="adminRecDesc" placeholder="Enter issue details or click 'AI Diagnose' on any ticket to analyze it automatically..."></textarea>
+            </div>
+            <button class="btn-ai" onclick="getAIRecommendation('admin')" style="width: 100%; margin-bottom: 16px;">✨ Generate AI Resolution Recommendation</button>
+
+            <label>Recommended Engineering Solution</label>
+            <div id="adminRecResult" class="rec-box">
+                <div class="rec-placeholder">
+                    <span style="font-size: 28px;">✨</span>
+                    <span>Enter an issue above or click <strong>"✨ AI Diagnose"</strong> on any ticket to generate a structured resolution checklist.</span>
+                </div>
             </div>
         </div>
 
@@ -237,19 +279,9 @@
 <!-- ==================== 普通用户主界面 ==================== -->
 <div id="userApp" class="hidden">
     <div class="container">
+        <!-- 左侧：提交工单与触发 AI Recommendation -->
         <div class="card">
-            <h2>🤖 AI IT Support Assistant</h2>
-            <div class="chat-box" id="userChatBox">
-                <div class="msg bot">Hello! I am your AI IT Assistant. Describe your computer, network, printer, or software problem, and I will help you troubleshoot it step by step.</div>
-            </div>
-            <div class="chat-input-row">
-                <input type="text" id="userChatInput" placeholder="e.g., My Wi-Fi keeps disconnecting..." onkeypress="if(event.key==='Enter') sendChatMessage('user')">
-                <button onclick="sendChatMessage('user')">Send</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>📝 Submit Support Ticket</h2>
+            <h2>📝 Report Issue & Submit Ticket</h2>
             <div class="form-group">
                 <label>Your Name *</label>
                 <input type="text" id="userName" placeholder="Enter your full name">
@@ -287,9 +319,24 @@
             </div>
             <div class="form-group">
                 <label>Issue Description *</label>
-                <textarea id="ticketDesc" placeholder="Please describe the issue in detail..."></textarea>
+                <textarea id="ticketDesc" placeholder="Describe your problem in detail to get instant AI troubleshooting steps or submit a ticket..."></textarea>
             </div>
-            <button onclick="submitTicket()" style="width: 100%;">Submit Ticket</button>
+            <div class="btn-row">
+                <button type="button" class="btn-ai" onclick="getAIRecommendation('user')">✨ Get AI Recommendation</button>
+                <button type="button" onclick="submitTicket()">Submit Support Ticket</button>
+            </div>
+        </div>
+
+        <!-- 右侧：AI Recommendation 诊断建议面板 -->
+        <div class="card">
+            <h2>✨ AI Troubleshooting Recommendation</h2>
+            <div id="userRecResult" class="rec-box">
+                <div class="rec-placeholder">
+                    <span style="font-size: 32px;">💡</span>
+                    <strong>Need a quick fix before submitting a ticket?</strong>
+                    <span>Fill in your category and issue description on the left, then click <strong>"✨ Get AI Recommendation"</strong> for step-by-step troubleshooting advice.</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -321,6 +368,7 @@
 <script>
     let currentUserRole = "user";
     let syncTimer = null;
+    let cachedTickets = [];
 
     function togglePassword(inputId, btn) {
         const input = document.getElementById(inputId);
@@ -350,20 +398,20 @@
 
     function switchAdminTab(tab) {
         document.getElementById("navTickets").classList.remove("active");
-        document.getElementById("navChat").classList.remove("active");
+        document.getElementById("navRec").classList.remove("active");
         document.getElementById("navAccounts").classList.remove("active");
 
         document.getElementById("adminTicketsView").classList.add("hidden");
-        document.getElementById("adminChatView").classList.add("hidden");
+        document.getElementById("adminRecView").classList.add("hidden");
         document.getElementById("adminAccountsView").classList.add("hidden");
 
         if (tab === "tickets") {
             document.getElementById("navTickets").classList.add("active");
             document.getElementById("adminTicketsView").classList.remove("hidden");
             loadTickets();
-        } else if (tab === "chat") {
-            document.getElementById("navChat").classList.add("active");
-            document.getElementById("adminChatView").classList.remove("hidden");
+        } else if (tab === "rec") {
+            document.getElementById("navRec").classList.add("active");
+            document.getElementById("adminRecView").classList.remove("hidden");
         } else if (tab === "accounts") {
             document.getElementById("navAccounts").classList.add("active");
             document.getElementById("adminAccountsView").classList.remove("hidden");
@@ -437,12 +485,12 @@
         if (role === "admin") {
             document.getElementById("userApp").classList.add("hidden");
             document.getElementById("adminApp").classList.remove("hidden");
-            document.getElementById("headerSubtitle").textContent = "Admin Console: Manage support tickets, use AI Assistant, or inspect registered accounts.";
+            document.getElementById("headerSubtitle").textContent = "Admin Console: Manage support tickets, generate AI resolutions, or inspect registered accounts.";
             switchAdminTab("tickets");
         } else {
             document.getElementById("adminApp").classList.add("hidden");
             document.getElementById("userApp").classList.remove("hidden");
-            document.getElementById("headerSubtitle").textContent = "Ask our AI Assistant for instant troubleshooting, or submit a ticket for IT engineer support.";
+            document.getElementById("headerSubtitle").textContent = "Get instant AI troubleshooting recommendations, or submit a ticket for IT engineer support.";
             loadTickets();
         }
 
@@ -458,38 +506,43 @@
         }
     }
 
-    function appendChat(boxId, text, isUser) {
-        const chatBox = document.getElementById(boxId);
-        const div = document.createElement("div");
-        div.className = "msg " + (isUser ? "user" : "bot");
-        div.textContent = text;
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
-        return div;
-    }
+    async function getAIRecommendation(mode) {
+        const isAdmin = mode === "admin";
+        const department = document.getElementById(isAdmin ? "adminRecDept" : "userDept").value;
+        const category = document.getElementById(isAdmin ? "adminRecCat" : "ticketCat").value;
+        const priority = document.getElementById(isAdmin ? "adminRecPriority" : "ticketPriority").value;
+        const description = document.getElementById(isAdmin ? "adminRecDesc" : "ticketDesc").value.trim();
+        const resultBox = document.getElementById(isAdmin ? "adminRecResult" : "userRecResult");
 
-    async function sendChatMessage(mode) {
-        const inputId = mode === "admin" ? "adminChatInput" : "userChatInput";
-        const boxId = mode === "admin" ? "adminChatBox" : "userChatBox";
-        const input = document.getElementById(inputId);
-        const message = input.value.trim();
-        if (!message) return;
+        if (!description) {
+            alert("Please enter the issue description first.");
+            return;
+        }
 
-        appendChat(boxId, message, true);
-        input.value = "";
-        const loadingMsg = appendChat(boxId, "Thinking...", false);
+        resultBox.innerHTML = `<div class="rec-placeholder"><span style="font-size: 24px;">⏳</span><span>Analyzing issue and generating AI recommendation...</span></div>`;
 
         try {
-            const response = await fetch("/api/chat", {
+            const response = await fetch("/api/recommend", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: message })
+                body: JSON.stringify({ department, category, priority, description })
             });
             const data = await response.json();
-            loadingMsg.textContent = data.reply;
+            resultBox.textContent = data.recommendation;
         } catch (err) {
-            loadingMsg.textContent = "Network error. Please check your connection and try again.";
+            resultBox.textContent = "Network error. Please check your connection and try again.";
         }
+    }
+
+    function diagnoseTicket(ticketId) {
+        const ticket = cachedTickets.find(t => t.id === ticketId);
+        if (!ticket) return;
+        switchAdminTab("rec");
+        document.getElementById("adminRecDept").value = ticket.department;
+        document.getElementById("adminRecCat").value = ticket.category;
+        document.getElementById("adminRecPriority").value = ticket.priority;
+        document.getElementById("adminRecDesc").value = ticket.description;
+        getAIRecommendation("admin");
     }
 
     async function submitTicket() {
@@ -532,6 +585,7 @@
         const response = await fetch("/api/tickets");
         if (!response.ok) return;
         const tickets = await response.json();
+        cachedTickets = tickets;
 
         const tbodyId = currentUserRole === "admin" ? "adminTicketTableBody" : "userTicketTableBody";
         const tbody = document.getElementById(tbodyId);
@@ -540,9 +594,12 @@
         tickets.forEach(t => {
             const tr = document.createElement("tr");
             const actionCell = currentUserRole === "admin"
-                ? `<td>${t.status === 'Open'
-                    ? `<button class="btn-resolve" onclick="resolveTicket(${t.id})">Mark Resolved</button>`
-                    : `<span style="color: #94a3b8; font-size: 12px;">Done</span>`}</td>`
+                ? `<td style="white-space: nowrap;">
+                    <button class="btn-diagnose" onclick="diagnoseTicket(${t.id})">✨ AI Diagnose</button>
+                    ${t.status === 'Open'
+                        ? `<button class="btn-resolve" onclick="resolveTicket(${t.id})">Mark Resolved</button>`
+                        : `<span style="color: #94a3b8; font-size: 12px;">Done</span>`}
+                   </td>`
                 : "";
 
             tr.innerHTML = `
