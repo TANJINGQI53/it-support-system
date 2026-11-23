@@ -142,7 +142,6 @@ def register():
     conn = get_db()
     c = conn.cursor()
 
-    # 按所选角色分别检查数量上限（admin 最多 3 个，user 最多 100 个）
     if DATABASE_URL:
         c.execute("SELECT COUNT(*) FROM users WHERE role = %s", (role,))
     else:
@@ -368,24 +367,55 @@ def get_fast_fallback_models(api_key, primary_model):
         pass
     return models
 
-@app.route('/api/chat', methods=['POST'])
-def ai_chat():
+@app.route('/api/recommend', methods=['POST'])
+def ai_recommendation():
     if 'username' not in session:
-        return jsonify({'reply': 'Please log in to use the AI Assistant.'}), 401
+        return jsonify({'recommendation': 'Please log in to get AI recommendations.'}), 401
 
     data = request.get_json()
-    user_message = data.get('message', '').strip()
-    if not user_message:
-        return jsonify({'reply': 'Please enter a question.'}), 400
+    category = data.get('category', 'General').strip()
+    priority = data.get('priority', 'Medium').strip()
+    department = data.get('department', 'General').strip()
+    description = data.get('description', '').strip()
+
+    if not description:
+        return jsonify({'recommendation': 'Please enter an issue description first so AI can analyze it.'}), 400
 
     api_key = os.environ.get("AI_API_KEY")
     if not api_key:
         return jsonify({
-            'reply': '⚠️ AI_API_KEY is not configured on the server yet. Please add it in Render Environment Variables, or submit a ticket directly.'
+            'recommendation': '⚠️ AI_API_KEY is not configured on the server yet. Please submit a support ticket directly.'
         }), 500
 
     primary_model = os.environ.get("AI_MODEL", "gemini-3.8-flash")
     models_to_try = get_fast_fallback_models(api_key, primary_model)
+
+    is_admin = session.get('role') == 'admin'
+    if is_admin:
+        sys_prompt = (
+            "You are a Senior IT Support Engineer Advisor. Given a support ticket's category, priority, department, and issue description, "
+            "provide a structured, actionable resolution plan for the IT admin:\n"
+            "1. Likely Root Cause\n"
+            "2. Step-by-Step Resolution Checklist\n"
+            "3. Verification & Escalation Notes\n"
+            "Keep it concise, technical, and directly actionable."
+        )
+    else:
+        sys_prompt = (
+            "You are an automated IT Troubleshooting Recommendation Engine. Given a user's issue category, priority, and description, "
+            "provide a clear, structured self-service recommendation:\n"
+            "1. Quick Diagnosis\n"
+            "2. Step-by-Step Fix to Try Now (3-5 concise steps)\n"
+            "3. When to Submit a Ticket (e.g., if admin rights or hardware replacement is needed)\n"
+            "Do not act as a conversational chatbot; output only the structured troubleshooting recommendation."
+        )
+
+    user_prompt = (
+        f"Department: {department}\n"
+        f"Category: {category}\n"
+        f"Priority: {priority}\n"
+        f"Issue Description: {description}"
+    )
 
     headers = {
         "Content-Type": "application/json",
@@ -393,33 +423,31 @@ def ai_chat():
     }
     payload = {
         "systemInstruction": {
-            "parts": [{
-                "text": "You are a professional IT Support Assistant. Give clear, concise, step-by-step troubleshooting solutions for computer, network, printer, password, and software issues. If the issue requires hardware repair or admin privileges, advise the user to submit an IT support ticket on this page."
-            }]
+            "parts": [{"text": sys_prompt}]
         },
         "contents": [{
             "role": "user",
-            "parts": [{"text": user_message}]
+            "parts": [{"text": user_prompt}]
         }],
         "generationConfig": {
-            "temperature": 0.6
+            "temperature": 0.4
         }
     }
 
-    last_error = "The AI service is temporarily busy. Please try again in a few seconds."
+    last_error = "The AI recommendation service is temporarily busy. Please try again in a few seconds."
     for model_name in models_to_try:
         api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
         try:
             res = requests.post(api_url, headers=headers, json=payload, timeout=12)
             if res.ok:
-                reply = res.json()['candidates'][0]['content']['parts'][0]['text']
-                return jsonify({'reply': reply})
+                rec_text = res.json()['candidates'][0]['content']['parts'][0]['text']
+                return jsonify({'recommendation': rec_text})
             if res.status_code in (429, 503):
                 last_error = f"Model ({model_name}) is currently experiencing high demand."
                 continue
             if res.status_code in (400, 404):
                 continue
-            return jsonify({'reply': f'AI API Error ({res.status_code}): {res.text}'}), 500
+            return jsonify({'recommendation': f'AI API Error ({res.status_code}): {res.text}'}), 500
         except requests.exceptions.Timeout:
             last_error = f"Model ({model_name}) timed out."
             continue
@@ -427,7 +455,7 @@ def ai_chat():
             last_error = str(e)
             continue
 
-    return jsonify({'reply': f'{last_error} Please try again in a few seconds.'}), 200
+    return jsonify({'recommendation': f'{last_error} Please try again in a few seconds or proceed with the ticket.'}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
