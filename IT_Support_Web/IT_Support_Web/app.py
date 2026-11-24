@@ -46,9 +46,11 @@ def init_db():
                 priority TEXT NOT NULL,
                 description TEXT NOT NULL,
                 status TEXT DEFAULT 'Open',
+                admin_reply TEXT DEFAULT '',
                 created_at TEXT NOT NULL
             )
         ''')
+        c.execute("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS admin_reply TEXT DEFAULT ''")
     else:
         c.execute('''
             CREATE TABLE IF NOT EXISTS users (
@@ -60,8 +62,8 @@ def init_db():
             )
         ''')
         c.execute("PRAGMA table_info(users)")
-        cols = [row[1] for row in c.fetchall()]
-        if "plain_password" not in cols:
+        u_cols = [row[1] for row in c.fetchall()]
+        if "plain_password" not in u_cols:
             c.execute("ALTER TABLE users ADD COLUMN plain_password TEXT DEFAULT ''")
 
         c.execute('''
@@ -74,9 +76,14 @@ def init_db():
                 priority TEXT NOT NULL,
                 description TEXT NOT NULL,
                 status TEXT DEFAULT 'Open',
+                admin_reply TEXT DEFAULT '',
                 created_at TEXT NOT NULL
             )
         ''')
+        c.execute("PRAGMA table_info(tickets)")
+        t_cols = [row[1] for row in c.fetchall()]
+        if "admin_reply" not in t_cols:
+            c.execute("ALTER TABLE tickets ADD COLUMN admin_reply TEXT DEFAULT ''")
 
     admin_user = os.environ.get("ADMIN_USER", "admin")
     admin_pass = os.environ.get("ADMIN_PASS", "admin123")
@@ -152,7 +159,7 @@ def register():
     if current_count >= limit:
         conn.close()
         role_label = "Admin" if role == 'admin' else "User"
-        return jsonify({'error': f'{role_label} account limit reached ({limit}/{limit}).'}), 403
+        return jsonify({'error': f'{role_label} account limit reached.'}), 403
 
     pw_hash = generate_password_hash(password)
     try:
@@ -237,6 +244,33 @@ def get_all_users():
         'users': [dict(row) for row in rows]
     })
 
+@app.route('/api/admin/users/<int:user_id>/password', methods=['PUT'])
+def reset_user_password(user_id):
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Admin privileges required.'}), 403
+
+    data = request.get_json()
+    new_password = data.get('password', '').strip()
+    if len(new_password) < 4:
+        return jsonify({'error': 'New password must be at least 4 characters.'}), 400
+
+    pw_hash = generate_password_hash(new_password)
+    conn = get_db()
+    c = conn.cursor()
+    if DATABASE_URL:
+        c.execute(
+            "UPDATE users SET password_hash = %s, plain_password = %s WHERE id = %s",
+            (pw_hash, new_password, user_id)
+        )
+    else:
+        c.execute(
+            "UPDATE users SET password_hash = ?, plain_password = ? WHERE id = ?",
+            (pw_hash, new_password, user_id)
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({'message': 'Password updated successfully.'})
+
 @app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
     if session.get('role') != 'admin':
@@ -312,13 +346,13 @@ def create_ticket():
     c = conn.cursor()
     if DATABASE_URL:
         c.execute('''
-            INSERT INTO tickets (owner_username, name, department, category, priority, description, status, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s, 'Open', %s)
+            INSERT INTO tickets (owner_username, name, department, category, priority, description, status, admin_reply, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, 'Open', '', %s)
         ''', (owner_username, name, department, category, priority, description, created_at))
     else:
         c.execute('''
-            INSERT INTO tickets (owner_username, name, department, category, priority, description, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, 'Open', ?)
+            INSERT INTO tickets (owner_username, name, department, category, priority, description, status, admin_reply, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'Open', '', ?)
         ''', (owner_username, name, department, category, priority, description, created_at))
     conn.commit()
     conn.close()
@@ -331,18 +365,25 @@ def update_ticket(ticket_id):
 
     data = request.get_json()
     new_status = data.get('status', 'Resolved')
+    admin_reply = data.get('admin_reply')
+
     conn = get_db()
     c = conn.cursor()
-    if DATABASE_URL:
-        c.execute('UPDATE tickets SET status = %s WHERE id = %s', (new_status, ticket_id))
+    if admin_reply is not None:
+        if DATABASE_URL:
+            c.execute('UPDATE tickets SET status = %s, admin_reply = %s WHERE id = %s', (new_status, admin_reply.strip(), ticket_id))
+        else:
+            c.execute('UPDATE tickets SET status = ?, admin_reply = ? WHERE id = ?', (new_status, admin_reply.strip(), ticket_id))
     else:
-        c.execute('UPDATE tickets SET status = ? WHERE id = ?', (new_status, ticket_id))
+        if DATABASE_URL:
+            c.execute('UPDATE tickets SET status = %s WHERE id = %s', (new_status, ticket_id))
+        else:
+            c.execute('UPDATE tickets SET status = ? WHERE id = ?', (new_status, ticket_id))
     conn.commit()
     conn.close()
-    return jsonify({'message': 'Status updated'})
+    return jsonify({'message': 'Ticket updated'})
 
-def get_instant_kb_recommendation(category, description, is_admin=False):
-    """当云端 AI 拥堵或超时时，秒级自动匹配本地 IT 知识库排查方案"""
+def get_instant_kb_recommendation(category, description):
     kb = {
         "Network / Wi-Fi": (
             "1. Quick Diagnosis\n"
@@ -397,8 +438,7 @@ def get_instant_kb_recommendation(category, description, is_admin=False):
         )
     }
     base = kb.get(category, kb["Software"])
-    header = "[Auto-Matched IT Knowledge Base Solution]\n" if not is_admin else "[Auto-Matched Engineering Playbook]\n"
-    return f"{header}Issue Summary: {description}\n\n{base}"
+    return f"[Auto-Matched IT Knowledge Base Solution]\nIssue Summary: {description}\n\n{base}"
 
 @app.route('/api/recommend', methods=['POST'])
 def ai_recommendation():
@@ -414,34 +454,21 @@ def ai_recommendation():
     if not description:
         return jsonify({'recommendation': 'Please enter an issue description first.'}), 400
 
-    is_admin = session.get('role') == 'admin'
     api_key = os.environ.get("AI_API_KEY")
-
-    # 如果未配置 API Key，直接秒级返回本地知识库方案
     if not api_key:
         return jsonify({
-            'recommendation': get_instant_kb_recommendation(category, description, is_admin),
+            'recommendation': get_instant_kb_recommendation(category, description),
             'source': 'kb'
         })
 
     model_name = os.environ.get("AI_MODEL", "gemini-3.8-flash")
-    if is_admin:
-        sys_prompt = (
-            "You are a Senior IT Support Engineer Advisor. Given a support ticket's category, priority, department, and issue description, "
-            "provide a concise, structured resolution plan:\n"
-            "1. Likely Root Cause\n"
-            "2. Step-by-Step Resolution Checklist\n"
-            "3. Verification & Escalation Notes"
-        )
-    else:
-        sys_prompt = (
-            "You are an automated IT Troubleshooting Recommendation Engine. Given a user's issue category, priority, and description, "
-            "provide a concise, structured self-service recommendation:\n"
-            "1. Quick Diagnosis\n"
-            "2. Step-by-Step Fix to Try Now (3-4 steps)\n"
-            "3. When to Submit a Ticket"
-        )
-
+    sys_prompt = (
+        "You are an automated IT Troubleshooting Recommendation Engine. Given a user's issue category, priority, and description, "
+        "provide a concise, structured self-service recommendation:\n"
+        "1. Quick Diagnosis\n"
+        "2. Step-by-Step Fix to Try Now (3-4 steps)\n"
+        "3. When to Submit a Ticket"
+    )
     user_prompt = (
         f"Department: {department}\n"
         f"Category: {category}\n"
@@ -460,7 +487,6 @@ def ai_recommendation():
         "generationConfig": {"temperature": 0.4}
     }
 
-    # 严格限制 6 秒超时，绝不卡死；一旦超时或 503 拥堵，1 秒内自动切换本地知识库秒出结果
     try:
         res = requests.post(api_url, headers=headers, json=payload, timeout=6)
         if res.ok:
@@ -470,7 +496,7 @@ def ai_recommendation():
         pass
 
     return jsonify({
-        'recommendation': get_instant_kb_recommendation(category, description, is_admin),
+        'recommendation': get_instant_kb_recommendation(category, description),
         'source': 'kb'
     })
 
