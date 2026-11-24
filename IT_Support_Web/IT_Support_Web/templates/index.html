@@ -6,7 +6,40 @@
     <title>AI-Powered IT Support Ticketing System</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f0f4f8; color: #1e293b; padding: 20px; min-height: 100vh; }
+        body {
+            background-color: #f0f4f8;
+            color: #1e293b;
+            padding: 20px;
+            min-height: 100vh;
+            transition: background 0.5s ease;
+        }
+
+        /* 登录界面专属：全屏垂直水平居中 + 柔和流动渐变背景 */
+        body.auth-bg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(-45deg, #e0e7ff, #dbeafe, #e0f2fe, #ede9fe, #f0f9ff);
+            background-size: 400% 400%;
+            animation: gradientFlow 14s ease infinite;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 淡色小流星背景画布 */
+        #meteorCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+        }
 
         .header { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding: 24px; border-radius: 12px; margin: 0 auto 24px; max-width: 1320px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .header h1 { font-size: 24px; margin-bottom: 6px; }
@@ -15,8 +48,24 @@
         .btn-logout { background: #ef4444; padding: 6px 12px; font-size: 13px; }
         .btn-logout:hover { background: #dc2626; }
 
-        .split-auth-container { max-width: 900px; margin: 45px auto; background: white; border-radius: 18px; overflow: hidden; display: grid; grid-template-columns: 1.05fr 1fr; box-shadow: 0 12px 35px rgba(15, 23, 42, 0.1); }
-        @media (max-width: 768px) { .split-auth-container { grid-template-columns: 1fr; margin: 20px auto; } }
+        /* 居中悬浮登录卡片 */
+        .split-auth-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 920px;
+            margin: auto;
+            background: rgba(255, 255, 255, 0.93);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            border-radius: 20px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1.05fr 1fr;
+            box-shadow: 0 22px 50px rgba(30, 58, 138, 0.14), 0 4px 16px rgba(15, 23, 42, 0.06);
+        }
+        @media (max-width: 768px) { .split-auth-container { grid-template-columns: 1fr; } }
 
         .auth-banner { background: linear-gradient(145deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%); color: white; padding: 44px 36px; display: flex; flex-direction: column; justify-content: space-between; }
         .brand-badge { display: inline-block; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 20px; width: fit-content; }
@@ -116,7 +165,10 @@
         .hidden { display: none !important; }
     </style>
 </head>
-<body>
+<body class="auth-bg">
+
+<!-- 登录界面淡色小流星画布 -->
+<canvas id="meteorCanvas"></canvas>
 
 <div id="topHeader" class="header hidden">
     <div>
@@ -407,6 +459,96 @@
     let cachedTickets = [];
     let resolvingTicketId = null;
 
+    /* ==================== 淡色小流星背景动画 ==================== */
+    const meteorCanvas = document.getElementById("meteorCanvas");
+    const mCtx = meteorCanvas.getContext("2d");
+    let meteors = [];
+    let meteorAnimId = null;
+
+    function resizeMeteorCanvas() {
+        meteorCanvas.width = window.innerWidth;
+        meteorCanvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resizeMeteorCanvas);
+    resizeMeteorCanvas();
+
+    class SoftMeteor {
+        constructor() {
+            this.reset(true);
+        }
+        reset(initial = false) {
+            this.x = Math.random() * (meteorCanvas.width + 300) - 100;
+            this.y = initial ? Math.random() * meteorCanvas.height : -40;
+            this.len = 45 + Math.random() * 75;
+            this.speed = 1.6 + Math.random() * 2.4;
+            this.size = 1.2 + Math.random() * 1.5;
+            this.alpha = 0.22 + Math.random() * 0.35;
+            const palette = [
+                "99, 102, 241",   // 淡靛紫
+                "59, 130, 246",   // 淡天蓝
+                "14, 165, 233",   // 淡冰青
+                "139, 92, 246"    // 淡紫罗兰
+            ];
+            this.rgb = palette[Math.floor(Math.random() * palette.length)];
+        }
+        update() {
+            this.x -= this.speed * 0.85;
+            this.y += this.speed;
+            if (this.y > meteorCanvas.height + 80 || this.x < -120) {
+                this.reset(false);
+            }
+        }
+        draw() {
+            const tailX = this.x + this.len * 0.85;
+            const tailY = this.y - this.len;
+            const grad = mCtx.createLinearGradient(this.x, this.y, tailX, tailY);
+            grad.addColorStop(0, `rgba(${this.rgb}, ${this.alpha})`);
+            grad.addColorStop(0.5, `rgba(${this.rgb}, ${this.alpha * 0.35})`);
+            grad.addColorStop(1, `rgba(${this.rgb}, 0)`);
+
+            mCtx.beginPath();
+            mCtx.strokeStyle = grad;
+            mCtx.lineWidth = this.size;
+            mCtx.lineCap = "round";
+            mCtx.moveTo(this.x, this.y);
+            mCtx.lineTo(tailX, tailY);
+            mCtx.stroke();
+
+            // 流星头部微光点
+            mCtx.beginPath();
+            mCtx.fillStyle = `rgba(255, 255, 255, ${this.alpha + 0.25})`;
+            mCtx.arc(this.x, this.y, this.size * 0.85, 0, Math.PI * 2);
+            mCtx.fill();
+        }
+    }
+
+    function startMeteors() {
+        meteorCanvas.classList.remove("hidden");
+        document.body.classList.add("auth-bg");
+        if (meteors.length === 0) {
+            for (let i = 0; i < 24; i++) meteors.push(new SoftMeteor());
+        }
+        if (!meteorAnimId) {
+            const loop = () => {
+                mCtx.clearRect(0, 0, meteorCanvas.width, meteorCanvas.height);
+                meteors.forEach(m => { m.update(); m.draw(); });
+                meteorAnimId = requestAnimationFrame(loop);
+            };
+            loop();
+        }
+    }
+
+    function stopMeteors() {
+        meteorCanvas.classList.add("hidden");
+        document.body.classList.remove("auth-bg");
+        if (meteorAnimId) {
+            cancelAnimationFrame(meteorAnimId);
+            meteorAnimId = null;
+        }
+    }
+    startMeteors();
+
+    /* ==================== 业务交互逻辑 ==================== */
     function togglePassword(inputId, btn) {
         const input = document.getElementById(inputId);
         if (input.type === "password") {
@@ -505,9 +647,11 @@
         document.getElementById("authSection").classList.remove("hidden");
         document.getElementById("loginPass").value = "";
         document.getElementById("authMsg").textContent = "";
+        startMeteors();
     }
 
     function enterApp(username, role) {
+        stopMeteors();
         currentUserRole = role;
         document.getElementById("currentUsername").textContent = username;
         document.getElementById("currentRole").textContent = role.toUpperCase();
