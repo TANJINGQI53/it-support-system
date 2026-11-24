@@ -8,7 +8,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f0f4f8; color: #1e293b; padding: 20px; min-height: 100vh; }
 
-        .header { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding: 24px; border-radius: 12px; margin: 0 auto 24px; max-width: 1300px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .header { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding: 24px; border-radius: 12px; margin: 0 auto 24px; max-width: 1320px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .header h1 { font-size: 24px; margin-bottom: 6px; }
         .header p { font-size: 14px; opacity: 0.9; }
         .user-bar { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.15); padding: 8px 14px; border-radius: 8px; font-size: 14px; }
@@ -38,7 +38,7 @@
         .auth-msg { font-size: 13px; margin-top: 12px; text-align: center; min-height: 18px; }
 
         /* 管理员左侧边栏布局 */
-        .admin-shell { display: grid; grid-template-columns: 245px 1fr; gap: 24px; max-width: 1300px; margin: 0 auto; align-items: start; }
+        .admin-shell { display: grid; grid-template-columns: 235px 1fr; gap: 24px; max-width: 1320px; margin: 0 auto; align-items: start; }
         @media (max-width: 900px) { .admin-shell { grid-template-columns: 1fr; } }
         .admin-sidebar { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 8px; }
         .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #94a3b8; padding: 4px 12px 8px; }
@@ -46,8 +46,24 @@
         .nav-item:hover { background: #f1f5f9; color: #1e293b; }
         .nav-item.active { background: #eff6ff; color: #2563eb; box-shadow: inset 3px 0 0 #2563eb; }
 
+        /* 管理员数据统计看板 */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; }
+        .stat-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; }
+        .stat-num { font-size: 24px; font-weight: 700; margin-top: 4px; }
+        .stat-open .stat-num { color: #d97706; }
+        .stat-progress .stat-num { color: #2563eb; }
+        .stat-urgent .stat-num { color: #dc2626; }
+        .stat-resolved .stat-num { color: #16a34a; }
+
+        /* 筛选栏 */
+        .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+        .filter-bar input { flex: 1; min-width: 200px; }
+        .filter-bar select { width: auto; min-width: 150px; }
+
         /* 普通用户双栏布局 */
-        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1300px; margin: 0 auto; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1320px; margin: 0 auto; }
         @media (max-width: 900px) { .container { grid-template-columns: 1fr; } }
 
         .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
@@ -70,23 +86,33 @@
         .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         @media (max-width: 500px) { .btn-row { grid-template-columns: 1fr; } }
 
-        .tickets-section { max-width: 1300px; margin: 24px auto 0; }
+        .tickets-section { max-width: 1320px; margin: 24px auto 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
         th { background: #f8fafc; color: #475569; font-weight: 600; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
         .badge.Open { background: #fef3c7; color: #d97706; }
+        .badge.InProgress { background: #dbeafe; color: #1d4ed8; }
         .badge.Resolved { background: #dcfce7; color: #16a34a; }
         .badge.role-admin { background: #dbeafe; color: #1d4ed8; }
         .badge.role-user { background: #f1f5f9; color: #475569; }
+        .reply-note { font-size: 12.5px; color: #0f172a; background: #f1f5f9; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #10b981; max-width: 240px; white-space: pre-wrap; }
+
+        .btn-progress { background: #3b82f6; padding: 6px 10px; font-size: 12px; margin-right: 4px; }
+        .btn-progress:hover { background: #2563eb; }
         .btn-resolve { background: #10b981; padding: 6px 10px; font-size: 12px; }
         .btn-resolve:hover { background: #059669; }
-        .btn-diagnose { background: #4f46e5; padding: 6px 10px; font-size: 12px; margin-right: 6px; }
-        .btn-diagnose:hover { background: #4338ca; }
-        .btn-danger { background: #ef4444; padding: 6px 12px; font-size: 12px; }
+        .btn-danger { background: #ef4444; padding: 6px 10px; font-size: 12px; }
         .btn-danger:hover { background: #dc2626; }
         .btn-secondary { background: #64748b; padding: 5px 10px; font-size: 12px; }
         .btn-secondary:hover { background: #475569; }
+
+        /* 弹窗模态框 */
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); display: flex; align-items: center; justify-content: center; z-index: 999; padding: 20px; }
+        .modal-card { background: white; border-radius: 14px; padding: 24px; width: 100%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .modal-card h3 { font-size: 18px; margin-bottom: 8px; color: #0f172a; }
+        .modal-sub { font-size: 13px; color: #64748b; margin-bottom: 14px; line-height: 1.5; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -113,7 +139,7 @@
             <ul class="feature-list">
                 <li><span class="feature-icon">✓</span> Instant AI troubleshooting recommendations</li>
                 <li><span class="feature-icon">✓</span> Real-time ticket status tracking</li>
-                <li><span class="feature-icon">✓</span> Role-based access (Up to 3 Admins & 100 Users)</li>
+                <li><span class="feature-icon">✓</span> Direct engineer resolution feedback</li>
             </ul>
         </div>
         <div class="banner-footer">Authorized Personnel & Registered Users Only</div>
@@ -144,8 +170,8 @@
             <div class="form-group">
                 <label>Account Role</label>
                 <select id="regRole">
-                    <option value="user" selected>User (Max 100 Accounts)</option>
-                    <option value="admin">Admin (Max 3 Accounts)</option>
+                    <option value="user" selected>User</option>
+                    <option value="admin">Admin</option>
                 </select>
             </div>
             <div class="form-group">
@@ -171,30 +197,67 @@
     <aside class="admin-sidebar">
         <div class="sidebar-title">Admin Navigation</div>
         <button id="navTickets" class="nav-item active" onclick="switchAdminTab('tickets')">📋 Support Tickets</button>
-        <button id="navRec" class="nav-item" onclick="switchAdminTab('rec')">✨ AI Recommendation</button>
         <button id="navAccounts" class="nav-item" onclick="switchAdminTab('accounts')">👥 Accounts & Passwords</button>
     </aside>
 
     <main>
-        <!-- 页面 1：Support Tickets -->
+        <!-- 页面 1：Support Tickets（含统计看板、筛选、接单处理、解决备注） -->
         <div id="adminTicketsView" class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h2 style="margin-bottom: 0; border: none;">📋 All Support Tickets (Admin View)</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin-bottom: 0; border: none;">📋 Support Tickets Management</h2>
                 <button onclick="loadTickets()" style="background: #64748b; padding: 7px 14px; font-size: 13px;">🔄 Refresh</button>
             </div>
+
+            <!-- 实时状态统计看板 -->
+            <div class="stats-grid">
+                <div class="stat-box stat-open">
+                    <div class="stat-label">Open (Pending)</div>
+                    <div class="stat-num" id="statOpen">0</div>
+                </div>
+                <div class="stat-box stat-progress">
+                    <div class="stat-label">In Progress</div>
+                    <div class="stat-num" id="statProgress">0</div>
+                </div>
+                <div class="stat-box stat-urgent">
+                    <div class="stat-label">Urgent Open</div>
+                    <div class="stat-num" id="statUrgent">0</div>
+                </div>
+                <div class="stat-box stat-resolved">
+                    <div class="stat-label">Resolved</div>
+                    <div class="stat-num" id="statResolved">0</div>
+                </div>
+            </div>
+
+            <!-- 筛选与搜索栏 -->
+            <div class="filter-bar">
+                <input type="text" id="ticketSearchInput" placeholder="Search by name, department, or issue..." oninput="renderAdminTickets()">
+                <select id="ticketStatusFilter" onchange="renderAdminTickets()">
+                    <option value="ALL">All Statuses</option>
+                    <option value="Open">Open Only</option>
+                    <option value="In Progress">In Progress Only</option>
+                    <option value="Resolved">Resolved Only</option>
+                </select>
+                <select id="ticketPriorityFilter" onchange="renderAdminTickets()">
+                    <option value="ALL">All Priorities</option>
+                    <option value="Urgent">Urgent</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+            </div>
+
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Name</th>
-                            <th>Dept</th>
-                            <th>Category</th>
+                            <th>Requester</th>
+                            <th>Dept / Cat</th>
                             <th>Priority</th>
-                            <th>Description</th>
-                            <th>Time</th>
+                            <th>Issue Description</th>
+                            <th>Admin Reply</th>
                             <th>Status</th>
-                            <th>Action</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="adminTicketTableBody"></tbody>
@@ -202,64 +265,12 @@
             </div>
         </div>
 
-        <!-- 页面 2：AI Recommendation（管理员诊断建议页面） -->
-        <div id="adminRecView" class="card hidden">
-            <h2>✨ AI Resolution Recommendation</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                <div>
-                    <label>Department</label>
-                    <select id="adminRecDept">
-                        <option value="IT">IT</option>
-                        <option value="HR">HR</option>
-                        <option value="Finance">Finance</option>
-                        <option value="Operations">Operations</option>
-                        <option value="Student / Staff">Student / Staff</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Category</label>
-                    <select id="adminRecCat">
-                        <option value="Network / Wi-Fi">Network / Wi-Fi</option>
-                        <option value="Hardware">Hardware</option>
-                        <option value="Software">Software</option>
-                        <option value="Account / Password">Account / Password</option>
-                        <option value="Printer">Printer</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Priority</label>
-                    <select id="adminRecPriority">
-                        <option value="Low">Low</option>
-                        <option value="Medium" selected>Medium</option>
-                        <option value="High">High</option>
-                        <option value="Urgent">Urgent</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Issue Details / Ticket Description *</label>
-                <textarea id="adminRecDesc" placeholder="Enter issue details or click 'AI Diagnose' on any ticket to analyze it automatically..."></textarea>
-            </div>
-            <button class="btn-ai" onclick="getAIRecommendation('admin')" style="width: 100%; margin-bottom: 16px;">✨ Generate AI Resolution Recommendation</button>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <label style="margin-bottom: 0;">Recommended Engineering Solution</label>
-                <button type="button" class="btn-search" onclick="searchWebSolution('admin')">🔍 Auto Web Search</button>
-            </div>
-            <div id="adminRecResult" class="rec-box">
-                <div class="rec-placeholder">
-                    <span style="font-size: 28px;">✨</span>
-                    <span>Enter an issue above or click <strong>"✨ AI Diagnose"</strong> on any ticket to generate a structured resolution checklist.</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 页面 3：查看 Admin (上限 3) 和 User (上限 100) 账号密码 -->
+        <!-- 页面 2：账号与密码管理（支持查看、重置密码、删除） -->
         <div id="adminAccountsView" class="card hidden">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div>
                     <h2 style="margin-bottom: 4px; border: none;">👥 Registered Accounts & Passwords</h2>
-                    <span id="accountCountBadge" style="font-size: 13px; color: #64748b; font-weight: 600;">Admins: 0 / 3 | Users: 0 / 100</span>
+                    <span id="accountCountBadge" style="font-size: 13px; color: #64748b; font-weight: 600;">Admins: 0 | Users: 0</span>
                 </div>
                 <button onclick="loadAccounts()" style="background: #64748b; padding: 7px 14px; font-size: 13px;">🔄 Refresh</button>
             </div>
@@ -271,7 +282,7 @@
                             <th>Role</th>
                             <th>Username</th>
                             <th>Password</th>
-                            <th>Action</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="accountsTableBody"></tbody>
@@ -327,7 +338,7 @@
                 <textarea id="ticketDesc" placeholder="Describe your problem in detail to get instant AI troubleshooting steps or submit a ticket..."></textarea>
             </div>
             <div class="btn-row">
-                <button type="button" class="btn-ai" onclick="getAIRecommendation('user')">✨ Get AI Recommendation</button>
+                <button type="button" class="btn-ai" onclick="getAIRecommendation()">✨ Get AI Recommendation</button>
                 <button type="button" onclick="submitTicket()">Submit Support Ticket</button>
             </div>
         </div>
@@ -336,7 +347,7 @@
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 16px;">
                 <h2 style="margin-bottom: 0; border: none; padding-bottom: 0;">✨ AI Troubleshooting Recommendation</h2>
-                <button type="button" class="btn-search" onclick="searchWebSolution('user')">🔍 Auto Web Search</button>
+                <button type="button" class="btn-search" onclick="searchWebSolution()">🔍 Auto Web Search</button>
             </div>
             <div id="userRecResult" class="rec-box">
                 <div class="rec-placeholder">
@@ -363,6 +374,7 @@
                         <th>Category</th>
                         <th>Priority</th>
                         <th>Description</th>
+                        <th>Admin Resolution / Reply</th>
                         <th>Time</th>
                         <th>Status</th>
                     </tr>
@@ -373,10 +385,27 @@
     </div>
 </div>
 
+<!-- 管理员解决工单回复弹窗 -->
+<div id="resolveModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+        <h3 id="resolveModalTitle">Resolve Ticket</h3>
+        <p class="modal-sub" id="resolveModalIssue"></p>
+        <div class="form-group">
+            <label>Resolution Note / Reply to User *</label>
+            <textarea id="resolveReplyInput" placeholder="Explain how the issue was fixed (e.g., Password reset to Temp@2026, or Network port reconfigured)..."></textarea>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" style="padding: 10px 16px; font-size: 14px;" onclick="closeResolveModal()">Cancel</button>
+            <button type="button" class="btn-resolve" style="padding: 10px 16px; font-size: 14px;" onclick="confirmResolveTicket()">Confirm & Mark Resolved</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let currentUserRole = "user";
     let syncTimer = null;
     let cachedTickets = [];
+    let resolvingTicketId = null;
 
     function togglePassword(inputId, btn) {
         const input = document.getElementById(inputId);
@@ -406,20 +435,15 @@
 
     function switchAdminTab(tab) {
         document.getElementById("navTickets").classList.remove("active");
-        document.getElementById("navRec").classList.remove("active");
         document.getElementById("navAccounts").classList.remove("active");
 
         document.getElementById("adminTicketsView").classList.add("hidden");
-        document.getElementById("adminRecView").classList.add("hidden");
         document.getElementById("adminAccountsView").classList.add("hidden");
 
         if (tab === "tickets") {
             document.getElementById("navTickets").classList.add("active");
             document.getElementById("adminTicketsView").classList.remove("hidden");
             loadTickets();
-        } else if (tab === "rec") {
-            document.getElementById("navRec").classList.add("active");
-            document.getElementById("adminRecView").classList.remove("hidden");
         } else if (tab === "accounts") {
             document.getElementById("navAccounts").classList.add("active");
             document.getElementById("adminAccountsView").classList.remove("hidden");
@@ -493,7 +517,7 @@
         if (role === "admin") {
             document.getElementById("userApp").classList.add("hidden");
             document.getElementById("adminApp").classList.remove("hidden");
-            document.getElementById("headerSubtitle").textContent = "Admin Console: Manage support tickets, generate AI resolutions, or inspect registered accounts.";
+            document.getElementById("headerSubtitle").textContent = "Admin Console: Triage tickets, send resolution feedback to users, and manage accounts.";
             switchAdminTab("tickets");
         } else {
             document.getElementById("adminApp").classList.add("hidden");
@@ -514,21 +538,19 @@
         }
     }
 
-    function searchWebSolution(mode) {
-        const isAdmin = mode === "admin";
-        const category = document.getElementById(isAdmin ? "adminRecCat" : "ticketCat").value;
-        const description = document.getElementById(isAdmin ? "adminRecDesc" : "ticketDesc").value.trim();
+    function searchWebSolution() {
+        const category = document.getElementById("ticketCat").value;
+        const description = document.getElementById("ticketDesc").value.trim();
         const query = encodeURIComponent(`IT troubleshooting ${category} ${description}`);
         window.open(`https://www.google.com/search?q=${query}`, "_blank", "noopener");
     }
 
-    async function getAIRecommendation(mode) {
-        const isAdmin = mode === "admin";
-        const department = document.getElementById(isAdmin ? "adminRecDept" : "userDept").value;
-        const category = document.getElementById(isAdmin ? "adminRecCat" : "ticketCat").value;
-        const priority = document.getElementById(isAdmin ? "adminRecPriority" : "ticketPriority").value;
-        const description = document.getElementById(isAdmin ? "adminRecDesc" : "ticketDesc").value.trim();
-        const resultBox = document.getElementById(isAdmin ? "adminRecResult" : "userRecResult");
+    async function getAIRecommendation() {
+        const department = document.getElementById("userDept").value;
+        const category = document.getElementById("ticketCat").value;
+        const priority = document.getElementById("ticketPriority").value;
+        const description = document.getElementById("ticketDesc").value.trim();
+        const resultBox = document.getElementById("userRecResult");
 
         if (!description) {
             alert("Please enter the issue description first.");
@@ -546,20 +568,8 @@
             const data = await response.json();
             resultBox.textContent = data.recommendation;
         } catch (err) {
-            // 即使极端断网，前端也能直接触发一键自动搜索兜底
             resultBox.innerHTML = `<div class="rec-placeholder"><span>Connection interrupted. Click <strong>"🔍 Auto Web Search"</strong> above to search solutions immediately.</span></div>`;
         }
-    }
-
-    function diagnoseTicket(ticketId) {
-        const ticket = cachedTickets.find(t => t.id === ticketId);
-        if (!ticket) return;
-        switchAdminTab("rec");
-        document.getElementById("adminRecDept").value = ticket.department;
-        document.getElementById("adminRecCat").value = ticket.category;
-        document.getElementById("adminRecPriority").value = ticket.priority;
-        document.getElementById("adminRecDesc").value = ticket.description;
-        getAIRecommendation("admin");
     }
 
     async function submitTicket() {
@@ -589,13 +599,99 @@
         }
     }
 
-    async function resolveTicket(id) {
+    async function markInProgress(id) {
         await fetch(`/api/tickets/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "Resolved" })
+            body: JSON.stringify({ status: "In Progress" })
         });
         loadTickets();
+    }
+
+    function openResolveModal(id) {
+        const ticket = cachedTickets.find(t => t.id === id);
+        if (!ticket) return;
+        resolvingTicketId = id;
+        document.getElementById("resolveModalTitle").textContent = `Resolve Ticket #${ticket.id} (${ticket.name})`;
+        document.getElementById("resolveModalIssue").textContent = `Issue: ${ticket.description}`;
+        document.getElementById("resolveReplyInput").value = ticket.admin_reply || "";
+        document.getElementById("resolveModal").classList.remove("hidden");
+    }
+
+    function closeResolveModal() {
+        resolvingTicketId = null;
+        document.getElementById("resolveModal").classList.add("hidden");
+    }
+
+    async function confirmResolveTicket() {
+        if (!resolvingTicketId) return;
+        const reply = document.getElementById("resolveReplyInput").value.trim();
+        if (!reply) {
+            alert("Please enter a resolution note or reply for the user.");
+            return;
+        }
+        await fetch(`/api/tickets/${resolvingTicketId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "Resolved", admin_reply: reply })
+        });
+        closeResolveModal();
+        loadTickets();
+    }
+
+    function statusBadgeHtml(status) {
+        const cls = status === "In Progress" ? "InProgress" : status;
+        return `<span class="badge ${cls}">${status}</span>`;
+    }
+
+    function renderAdminTickets() {
+        const keyword = document.getElementById("ticketSearchInput").value.trim().toLowerCase();
+        const statusFilter = document.getElementById("ticketStatusFilter").value;
+        const priorityFilter = document.getElementById("ticketPriorityFilter").value;
+
+        const filtered = cachedTickets.filter(t => {
+            if (statusFilter !== "ALL" && t.status !== statusFilter) return false;
+            if (priorityFilter !== "ALL" && t.priority !== priorityFilter) return false;
+            if (keyword) {
+                const hay = `${t.name} ${t.department} ${t.category} ${t.description} ${t.owner_username}`.toLowerCase();
+                if (!hay.includes(keyword)) return false;
+            }
+            return true;
+        });
+
+        const tbody = document.getElementById("adminTicketTableBody");
+        tbody.innerHTML = "";
+
+        filtered.forEach(t => {
+            const tr = document.createElement("tr");
+            const replyHtml = t.admin_reply
+                ? `<div class="reply-note">${t.admin_reply}</div>`
+                : `<span style="color: #94a3b8; font-size: 12px;">No reply yet</span>`;
+
+            let actionBtns = "";
+            if (t.status === "Open") {
+                actionBtns = `
+                    <button class="btn-progress" onclick="markInProgress(${t.id})">Start</button>
+                    <button class="btn-resolve" onclick="openResolveModal(${t.id})">Resolve & Reply</button>
+                `;
+            } else if (t.status === "In Progress") {
+                actionBtns = `<button class="btn-resolve" onclick="openResolveModal(${t.id})">Resolve & Reply</button>`;
+            } else {
+                actionBtns = `<button class="btn-secondary" onclick="openResolveModal(${t.id})">Edit Reply</button>`;
+            }
+
+            tr.innerHTML = `
+                <td>#${t.id}</td>
+                <td><strong>${t.name}</strong><div style="font-size: 11px; color: #64748b;">@${t.owner_username}</div></td>
+                <td>${t.department}<div style="font-size: 11px; color: #64748b;">${t.category}</div></td>
+                <td><strong>${t.priority}</strong></td>
+                <td style="max-width: 240px;">${t.description}<div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">${t.created_at}</div></td>
+                <td>${replyHtml}</td>
+                <td>${statusBadgeHtml(t.status)}</td>
+                <td style="white-space: nowrap;">${actionBtns}</td>
+            `;
+            tbody.appendChild(tr);
+        });
     }
 
     async function loadTickets() {
@@ -604,34 +700,34 @@
         const tickets = await response.json();
         cachedTickets = tickets;
 
-        const tbodyId = currentUserRole === "admin" ? "adminTicketTableBody" : "userTicketTableBody";
-        const tbody = document.getElementById(tbodyId);
-        tbody.innerHTML = "";
-
-        tickets.forEach(t => {
-            const tr = document.createElement("tr");
-            const actionCell = currentUserRole === "admin"
-                ? `<td style="white-space: nowrap;">
-                    <button class="btn-diagnose" onclick="diagnoseTicket(${t.id})">✨ AI Diagnose</button>
-                    ${t.status === 'Open'
-                        ? `<button class="btn-resolve" onclick="resolveTicket(${t.id})">Mark Resolved</button>`
-                        : `<span style="color: #94a3b8; font-size: 12px;">Done</span>`}
-                   </td>`
-                : "";
-
-            tr.innerHTML = `
-                <td>#${t.id}</td>
-                <td><strong>${t.name}</strong></td>
-                <td>${t.department}</td>
-                <td>${t.category}</td>
-                <td>${t.priority}</td>
-                <td>${t.description}</td>
-                <td style="font-size: 12px; color: #64748b;">${t.created_at}</td>
-                <td><span class="badge ${t.status}">${t.status}</span></td>
-                ${actionCell}
-            `;
-            tbody.appendChild(tr);
-        });
+        if (currentUserRole === "admin") {
+            document.getElementById("statOpen").textContent = tickets.filter(t => t.status === "Open").length;
+            document.getElementById("statProgress").textContent = tickets.filter(t => t.status === "In Progress").length;
+            document.getElementById("statUrgent").textContent = tickets.filter(t => t.status !== "Resolved" && t.priority === "Urgent").length;
+            document.getElementById("statResolved").textContent = tickets.filter(t => t.status === "Resolved").length;
+            renderAdminTickets();
+        } else {
+            const tbody = document.getElementById("userTicketTableBody");
+            tbody.innerHTML = "";
+            tickets.forEach(t => {
+                const tr = document.createElement("tr");
+                const replyHtml = t.admin_reply
+                    ? `<div class="reply-note">${t.admin_reply}</div>`
+                    : `<span style="color: #94a3b8; font-size: 12px;">Pending IT review</span>`;
+                tr.innerHTML = `
+                    <td>#${t.id}</td>
+                    <td><strong>${t.name}</strong></td>
+                    <td>${t.department}</td>
+                    <td>${t.category}</td>
+                    <td>${t.priority}</td>
+                    <td>${t.description}</td>
+                    <td>${replyHtml}</td>
+                    <td style="font-size: 12px; color: #64748b;">${t.created_at}</td>
+                    <td>${statusBadgeHtml(t.status)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
     }
 
     function toggleTablePassword(spanId, btn, plainPw) {
@@ -680,10 +776,34 @@
                     <span id="pw_${u.id}" data-shown="0" style="font-family: monospace; margin-right: 8px;">••••••••</span>
                     <button class="btn-secondary" onclick="toggleTablePassword('pw_${u.id}', this, '${safePw}')">Show</button>
                 </td>
-                <td>${deleteBtn}</td>
+                <td style="white-space: nowrap;">
+                    <button class="btn-progress" onclick="resetAccountPassword(${u.id}, '${u.username}')">Reset PW</button>
+                    ${deleteBtn}
+                </td>
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    async function resetAccountPassword(id, username) {
+        const newPw = prompt(`Enter new password for "${username}" (minimum 4 characters):`);
+        if (newPw === null) return;
+        if (newPw.trim().length < 4) {
+            alert("Password must be at least 4 characters.");
+            return;
+        }
+        const res = await fetch(`/api/admin/users/${id}/password`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: newPw.trim() })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert(`Password for "${username}" has been updated.`);
+            loadAccounts();
+        } else {
+            alert(data.error || "Failed to update password.");
+        }
     }
 
     async function deleteUserAccount(id, username) {
